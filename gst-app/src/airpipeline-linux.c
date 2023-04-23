@@ -150,6 +150,7 @@ int run_pipeline_linux(int argc, char *argv[], void *args)
     // "device-index", 1, 
     g_print("set source /dev/video0\n");
     g_object_set(G_OBJECT(data.source), "device", "/dev/video0", NULL);
+    g_object_set(G_OBJECT(data.sink), "sync", FALSE, NULL);
 
     
     // create capsfilter h264-filter
