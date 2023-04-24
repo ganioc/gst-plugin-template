@@ -313,7 +313,7 @@ gst_myfilter_chain(GstPad *pad, GstObject *parent, GstBuffer *buf)
             data[4] == MYFILTER_NALU_SPS)
         {
             // Send SEI message out
-            g_print("Send SEI()\n");
+            g_print("In chain() , Send SEI()\n");
             g_print("datalen: %d\n", filter->datalen);
 
             JustCaughtDelimiter = FALSE;
@@ -345,8 +345,10 @@ gst_myfilter_chain(GstPad *pad, GstObject *parent, GstBuffer *buf)
             // Copy data;
             for (i = 0; i < sei_data_size; i++)
             {
-                map.data[sei_index++] = i;
+                map.data[sei_index++] = filter->data[i];
+                g_print("%02x ", filter->data[i]);
             }
+            g_print("\n");
 
             // End byte is 0x80;
             map.data[gbuffer_size - 1] = MYFILTER_SEI_TRAILING_BYTE;

@@ -9,12 +9,20 @@ static guint8 data_len;
 static LinuxData data;
 static gboolean thread_main_shutdown = FALSE;
 
-static gpointer thread_main_func(gpointer data){
+static gpointer thread_main_func(gpointer indata){
     g_print("Thread main started\n");
 
     while(thread_main_shutdown == FALSE){
         g_usleep(3000000);
         g_print("Thread running\n");
+        g_print("Set datalen to %d\n", data_len);
+        g_object_set (data.myfilter, "datalen", data_len++, NULL);
+        if(data_len >= 8){
+            data_len = 0;
+        }
+        data_arr[0] = data_len;
+        g_print("Set data content\n");
+        g_object_set(data.myfilter, "data", data_arr, NULL);
     }
 
     g_print("Thread main exited\n");
@@ -43,6 +51,9 @@ int run_pipeline_linux(int argc, char *argv[], void *args)
     g_print("Create a thread\n");
     memset(data_arr, 0, sizeof(data_arr));
     data_len = 0;
+    for(guint i = 0; i< 16; i++){
+        data_arr[i] = i+1;
+    }
 
     thread = g_thread_new("thread_main",
         thread_main_func,
