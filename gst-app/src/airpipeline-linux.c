@@ -2,7 +2,25 @@
 
 extern Params params;
 
+// data array, to transfer to plugin
+static guint8 data_arr[DATA_ARR_LEN];
+static guint8 data_len;
+
 static LinuxData data;
+static gboolean thread_main_shutdown = FALSE;
+
+static gpointer thread_main_func(gpointer data){
+    g_print("Thread main started\n");
+
+    while(thread_main_shutdown == FALSE){
+        g_usleep(3000000);
+        g_print("Thread running\n");
+    }
+
+    g_print("Thread main exited\n");
+    g_thread_exit(NULL);\
+    return NULL;
+}
 
 static void print_params(Params *param){
     g_print("------- params -------\n");
@@ -19,6 +37,20 @@ int run_pipeline_linux(int argc, char *argv[], void *args)
     GstMessage *msg;
     GstStateChangeReturn ret;
     // GstElement *local_source;
+
+    GThread *thread;
+
+    g_print("Create a thread\n");
+    memset(data_arr, 0, sizeof(data_arr));
+    data_len = 0;
+
+    thread = g_thread_new("thread_main",
+        thread_main_func,
+        NULL);
+    if(!thread){
+        g_print("Can not create thread_main\n");
+        return(-1);
+    }
 
     /* Initialize GStreamer */
     gst_init(&argc, &argv);
@@ -204,6 +236,9 @@ int run_pipeline_linux(int argc, char *argv[], void *args)
         }
         gst_message_unref(msg);
     }
+
+    // Shutdown thread main
+    thread_main_shutdown = TRUE;
 
     /* Free resources */
     g_print("Release resources\n");

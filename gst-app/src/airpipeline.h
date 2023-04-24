@@ -3,6 +3,9 @@
 
 #include <gst/gst.h>
 
+#define DATA_ARR_LEN    128
+
+
 
 typedef struct _Params
 {
