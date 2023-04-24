@@ -77,7 +77,7 @@ struct _Gstmyfilter
 
     gboolean silent;
 
-    guint8 data[MYFILTER_DATA_MAX_LEN];
+    guint8 *data;
     guint datalen;
 };
 

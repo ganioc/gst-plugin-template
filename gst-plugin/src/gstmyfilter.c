@@ -149,11 +149,22 @@ gst_myfilter_class_init(GstmyfilterClass *klass)
         g_param_spec_uint(
             "datalen",
             "DataLen",
-            "Description of Data Len",
+            "Data Length",
             0, 
             MYFILTER_DATA_MAX_LEN,
             0, 
             G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
+    
+    // add data array
+    g_object_class_install_property(gobject_class,
+        PROP_DATA,
+        g_param_spec_pointer(
+            "data",
+            "dataarr",
+            "A data array",
+            G_PARAM_READWRITE
+        )
+    );
     
 
     gst_element_class_set_details_simple(gstelement_class,
@@ -207,6 +218,9 @@ gst_myfilter_set_property(GObject *object, guint prop_id,
     case PROP_DATALEN:
         filter->datalen = g_value_get_uint(value);
         break;
+    case PROP_DATA:
+        filter->data = g_value_get_pointer(value);
+        break;
     default:
         G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
         break;
@@ -226,6 +240,9 @@ gst_myfilter_get_property(GObject *object, guint prop_id,
         break;
     case PROP_DATALEN:
         g_value_set_uint64(value, filter->datalen);
+        break;
+    case PROP_DATA:
+        g_value_set_pointer(value, filter->data);
         break;
     default:
         G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
@@ -286,29 +303,6 @@ gst_myfilter_chain(GstPad *pad, GstObject *parent, GstBuffer *buf)
     data = info.data;
     size = info.size;
 
-    // g_print("data size:%d\n", size);
-
-    // g_print("data: %02X %02X %02X %02X %02X %02X\n",
-    //         data[0],
-    //         data[1],
-    //         data[2],
-    //         data[3],
-    //         data[4],
-    //         data[5]);
-
-    // if (filter->silent == FALSE)
-    //   g_print ("I'm plugged, therefore I'm in.\n");
-
-    // Check if the buffer contains a H.264 NAL unit
-    // if (GST_BUFFER_FLAG_IS_SET(buf,       GST_BUFFER_FLAG_DELTA_UNIT) &&
-    //     GST_BUFFER_FLAG_IS_SET(buf, GST_BUFFER_FLAG_DECODE_ONLY))
-    // {
-    //   g_print("H.264 NAL unit\n");
-    // }
-    // else
-    // {
-    //   g_print("Unknown format\n");
-    // }
     if (size >= 5 &&
         data[0] == 0x00 &&
         data[1] == 0x00 &&
@@ -320,9 +314,11 @@ gst_myfilter_chain(GstPad *pad, GstObject *parent, GstBuffer *buf)
         {
             // Send SEI message out
             g_print("Send SEI()\n");
+            g_print("datalen: %d\n", filter->datalen);
+
             JustCaughtDelimiter = FALSE;
 
-            guint8 sei_index = 0, sei_data_size = 8, i = 0;
+            guint8 sei_index = 0, sei_data_size = filter->datalen, i = 0;
             ;
             guint16 gbuffer_size = 4 + 3 + 16 + sei_data_size + 1;
 
