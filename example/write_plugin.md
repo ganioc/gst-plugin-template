@@ -115,4 +115,4 @@ static gboolean my_plugin_sink_event(GstPad *pad, GstObject *parent, GstEvent *e
 ## 如何设置element的参数?
 g_object_set (data.playbin, "uri", "https://gstreamer.freedesktop.org/data/media/sintel_trailer-480p.webm", NULL);
 
-
+## 

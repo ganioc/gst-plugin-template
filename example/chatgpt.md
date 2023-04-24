@@ -173,5 +173,7 @@ static gboolean my_plugin_sink_event(GstPad *pad, GstObject *parent, GstEvent *e
 }
 ```
 
+## How to add a property to plugin?
+
 
 

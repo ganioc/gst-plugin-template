@@ -70,14 +70,16 @@ GST_DEBUG_CATEGORY_STATIC(gst_myfilter_debug);
 /* Filter signals and args */
 enum
 {
-  /* FILL ME */
-  LAST_SIGNAL
+    /* FILL ME */
+    LAST_SIGNAL
 };
 
 enum
 {
-  PROP_0,
-  PROP_SILENT
+    PROP_0,
+    PROP_SILENT,
+    PROP_DATALEN,
+    PROP_DATA
 };
 
 static gboolean JustCaughtDelimiter = FALSE;
@@ -125,29 +127,45 @@ static GstFlowReturn gst_myfilter_chain(GstPad *pad,
 static void
 gst_myfilter_class_init(GstmyfilterClass *klass)
 {
-  GObjectClass *gobject_class;
-  GstElementClass *gstelement_class;
+    GObjectClass *gobject_class;
+    GstElementClass *gstelement_class;
 
-  gobject_class = (GObjectClass *)klass;
-  gstelement_class = (GstElementClass *)klass;
+    gobject_class = (GObjectClass *)klass;
+    gstelement_class = (GstElementClass *)klass;
 
-  gobject_class->set_property = gst_myfilter_set_property;
-  gobject_class->get_property = gst_myfilter_get_property;
+    gobject_class->set_property = gst_myfilter_set_property;
+    gobject_class->get_property = gst_myfilter_get_property;
 
-  g_object_class_install_property(gobject_class, PROP_SILENT,
-                                  g_param_spec_boolean("silent", "Silent", "Produce verbose output ?",
-                                                       FALSE, G_PARAM_READWRITE));
+    g_object_class_install_property(gobject_class, PROP_SILENT,
+                                    g_param_spec_boolean(
+                                        "silent",
+                                        "Silent",
+                                        "Produce verbose output ?",
+                                        FALSE,
+                                        G_PARAM_READWRITE));
+    // add datlen property to the class
+    g_object_class_install_property(gobject_class, 
+        PROP_DATALEN,
+        g_param_spec_uint(
+            "datalen",
+            "DataLen",
+            "Description of Data Len",
+            0, 
+            MYFILTER_DATA_MAX_LEN,
+            0, 
+            G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
+    
 
-  gst_element_class_set_details_simple(gstelement_class,
-                                       "myfilter",
-                                       "FIXME:Generic",
-                                       "FIXME:Generic Template Element", 
-                                       " <<user@hostname.org>>");
+    gst_element_class_set_details_simple(gstelement_class,
+                                         "myfilter",
+                                         "FIXME:Generic",
+                                         "FIXME:Generic Template Element",
+                                         " <<user@hostname.org>>");
 
-  gst_element_class_add_pad_template(gstelement_class,
-                                     gst_static_pad_template_get(&src_factory));
-  gst_element_class_add_pad_template(gstelement_class,
-                                     gst_static_pad_template_get(&sink_factory));
+    gst_element_class_add_pad_template(gstelement_class,
+                                       gst_static_pad_template_get(&src_factory));
+    gst_element_class_add_pad_template(gstelement_class,
+                                       gst_static_pad_template_get(&sink_factory));
 }
 
 /* initialize the new element
@@ -158,53 +176,61 @@ gst_myfilter_class_init(GstmyfilterClass *klass)
 static void
 gst_myfilter_init(Gstmyfilter *filter)
 {
-  filter->sinkpad = gst_pad_new_from_static_template(&sink_factory, "sink");
-  gst_pad_set_event_function(filter->sinkpad,
-                             GST_DEBUG_FUNCPTR(gst_myfilter_sink_event));
-  gst_pad_set_chain_function(filter->sinkpad,
-                             GST_DEBUG_FUNCPTR(gst_myfilter_chain));
-  GST_PAD_SET_PROXY_CAPS(filter->sinkpad);
-  gst_element_add_pad(GST_ELEMENT(filter), filter->sinkpad);
+    filter->sinkpad = gst_pad_new_from_static_template(&sink_factory, "sink");
+    gst_pad_set_event_function(filter->sinkpad,
+                               GST_DEBUG_FUNCPTR(gst_myfilter_sink_event));
+    gst_pad_set_chain_function(filter->sinkpad,
+                               GST_DEBUG_FUNCPTR(gst_myfilter_chain));
+    GST_PAD_SET_PROXY_CAPS(filter->sinkpad);
+    gst_element_add_pad(GST_ELEMENT(filter), filter->sinkpad);
 
-  filter->srcpad = gst_pad_new_from_static_template(&src_factory, "src");
-  GST_PAD_SET_PROXY_CAPS(filter->srcpad);
-  gst_element_add_pad(GST_ELEMENT(filter), filter->srcpad);
+    filter->srcpad = gst_pad_new_from_static_template(&src_factory, "src");
+    GST_PAD_SET_PROXY_CAPS(filter->srcpad);
+    gst_element_add_pad(GST_ELEMENT(filter), filter->srcpad);
 
-  filter->silent = FALSE;
+    filter->silent = FALSE;
+
+    filter->datalen = MYFILTER_DATA_DEFAULT_LEN;
 }
 
 static void
 gst_myfilter_set_property(GObject *object, guint prop_id,
                           const GValue *value, GParamSpec *pspec)
 {
-  Gstmyfilter *filter = GST_MYFILTER(object);
+    Gstmyfilter *filter = GST_MYFILTER(object);
 
-  switch (prop_id)
-  {
-  case PROP_SILENT:
-    filter->silent = g_value_get_boolean(value);
-    break;
-  default:
-    G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
-    break;
-  }
+    switch (prop_id)
+    {
+    case PROP_SILENT:
+        filter->silent = g_value_get_boolean(value);
+        break;
+    case PROP_DATALEN:
+        filter->datalen = g_value_get_uint(value);
+        break;
+    default:
+        G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
+        break;
+    }
 }
 
 static void
 gst_myfilter_get_property(GObject *object, guint prop_id,
                           GValue *value, GParamSpec *pspec)
 {
-  Gstmyfilter *filter = GST_MYFILTER(object);
+    Gstmyfilter *filter = GST_MYFILTER(object);
 
-  switch (prop_id)
-  {
-  case PROP_SILENT:
-    g_value_set_boolean(value, filter->silent);
-    break;
-  default:
-    G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
-    break;
-  }
+    switch (prop_id)
+    {
+    case PROP_SILENT:
+        g_value_set_boolean(value, filter->silent);
+        break;
+    case PROP_DATALEN:
+        g_value_set_uint64(value, filter->datalen);
+        break;
+    default:
+        G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
+        break;
+    }
 }
 
 /* GstElement vmethod implementations */
@@ -214,32 +240,32 @@ static gboolean
 gst_myfilter_sink_event(GstPad *pad, GstObject *parent,
                         GstEvent *event)
 {
-  Gstmyfilter *filter;
-  gboolean ret;
+    Gstmyfilter *filter;
+    gboolean ret;
 
-  filter = GST_MYFILTER(parent);
+    filter = GST_MYFILTER(parent);
 
-  GST_LOG_OBJECT(filter, "Received %s event: %" GST_PTR_FORMAT,
-                 GST_EVENT_TYPE_NAME(event), event);
+    GST_LOG_OBJECT(filter, "Received %s event: %" GST_PTR_FORMAT,
+                   GST_EVENT_TYPE_NAME(event), event);
 
-  switch (GST_EVENT_TYPE(event))
-  {
-  case GST_EVENT_CAPS:
-  {
-    GstCaps *caps;
+    switch (GST_EVENT_TYPE(event))
+    {
+    case GST_EVENT_CAPS:
+    {
+        GstCaps *caps;
 
-    gst_event_parse_caps(event, &caps);
-    /* do something with the caps */
+        gst_event_parse_caps(event, &caps);
+        /* do something with the caps */
 
-    /* and forward */
-    ret = gst_pad_event_default(pad, parent, event);
-    break;
-  }
-  default:
-    ret = gst_pad_event_default(pad, parent, event);
-    break;
-  }
-  return ret;
+        /* and forward */
+        ret = gst_pad_event_default(pad, parent, event);
+        break;
+    }
+    default:
+        ret = gst_pad_event_default(pad, parent, event);
+        break;
+    }
+    return ret;
 }
 
 /* chain function
@@ -248,105 +274,105 @@ gst_myfilter_sink_event(GstPad *pad, GstObject *parent,
 static GstFlowReturn
 gst_myfilter_chain(GstPad *pad, GstObject *parent, GstBuffer *buf)
 {
-  Gstmyfilter *filter;
-  GstMapInfo info;
-  guint8 *data;
-  guint size;
-  // guint16 i = 0;
+    Gstmyfilter *filter;
+    GstMapInfo info;
+    guint8 *data;
+    guint size;
+    // guint16 i = 0;
 
-  filter = GST_MYFILTER(parent);
+    filter = GST_MYFILTER(parent);
 
-  gst_buffer_map(buf, &info, GST_MAP_READ);
-  data = info.data;
-  size = info.size;
+    gst_buffer_map(buf, &info, GST_MAP_READ);
+    data = info.data;
+    size = info.size;
 
-  // g_print("data size:%d\n", size);
+    // g_print("data size:%d\n", size);
 
-  // g_print("data: %02X %02X %02X %02X %02X %02X\n",
-  //         data[0],
-  //         data[1],
-  //         data[2],
-  //         data[3],
-  //         data[4],
-  //         data[5]);
+    // g_print("data: %02X %02X %02X %02X %02X %02X\n",
+    //         data[0],
+    //         data[1],
+    //         data[2],
+    //         data[3],
+    //         data[4],
+    //         data[5]);
 
-  // if (filter->silent == FALSE)
-  //   g_print ("I'm plugged, therefore I'm in.\n");
+    // if (filter->silent == FALSE)
+    //   g_print ("I'm plugged, therefore I'm in.\n");
 
-  // Check if the buffer contains a H.264 NAL unit
-  // if (GST_BUFFER_FLAG_IS_SET(buf,       GST_BUFFER_FLAG_DELTA_UNIT) &&
-  //     GST_BUFFER_FLAG_IS_SET(buf, GST_BUFFER_FLAG_DECODE_ONLY))
-  // {
-  //   g_print("H.264 NAL unit\n");
-  // }
-  // else
-  // {
-  //   g_print("Unknown format\n");
-  // }
-  if (size >= 5 &&
-      data[0] == 0x00 &&
-      data[1] == 0x00 &&
-      data[2] == 0x00 &&
-      data[3] == 0x01)
-  {
-    if (JustCaughtDelimiter == TRUE &&
-        data[4] == MYFILTER_NALU_SPS)
+    // Check if the buffer contains a H.264 NAL unit
+    // if (GST_BUFFER_FLAG_IS_SET(buf,       GST_BUFFER_FLAG_DELTA_UNIT) &&
+    //     GST_BUFFER_FLAG_IS_SET(buf, GST_BUFFER_FLAG_DECODE_ONLY))
+    // {
+    //   g_print("H.264 NAL unit\n");
+    // }
+    // else
+    // {
+    //   g_print("Unknown format\n");
+    // }
+    if (size >= 5 &&
+        data[0] == 0x00 &&
+        data[1] == 0x00 &&
+        data[2] == 0x00 &&
+        data[3] == 0x01)
     {
-      // Send SEI message out
-      g_print("Send SEI()\n");
-      JustCaughtDelimiter = FALSE;
+        if (JustCaughtDelimiter == TRUE &&
+            data[4] == MYFILTER_NALU_SPS)
+        {
+            // Send SEI message out
+            g_print("Send SEI()\n");
+            JustCaughtDelimiter = FALSE;
 
-      guint8 sei_index = 0, sei_data_size = 8, i = 0;
-      ;
-      guint16 gbuffer_size = 4 + 3 + 16 + sei_data_size + 1;
+            guint8 sei_index = 0, sei_data_size = 8, i = 0;
+            ;
+            guint16 gbuffer_size = 4 + 3 + 16 + sei_data_size + 1;
 
-      // Add the NAL unit header to the SEI message
-      GstBuffer *sei_buf = gst_buffer_new_and_alloc(gbuffer_size);
-      GstMapInfo map;
+            // Add the NAL unit header to the SEI message
+            GstBuffer *sei_buf = gst_buffer_new_and_alloc(gbuffer_size);
+            GstMapInfo map;
 
-      gst_buffer_map(sei_buf, &map, GST_MAP_WRITE);
-      map.data[0] = 0x00;
-      map.data[1] = 0x00;
-      map.data[2] = 0x00;
-      map.data[3] = 0x01;
-      map.data[4] = MYFILTER_SEI_NALU_TYPE;    // NAL unit type for SEI message
-      map.data[5] = MYFILTER_SEI_PAYLOAD_TYPE; // SEI message payload type
-      map.data[6] = 16 + sei_data_size;        // SEI message payload size
+            gst_buffer_map(sei_buf, &map, GST_MAP_WRITE);
+            map.data[0] = 0x00;
+            map.data[1] = 0x00;
+            map.data[2] = 0x00;
+            map.data[3] = 0x01;
+            map.data[4] = MYFILTER_SEI_NALU_TYPE;    // NAL unit type for SEI message
+            map.data[5] = MYFILTER_SEI_PAYLOAD_TYPE; // SEI message payload type
+            map.data[6] = 16 + sei_data_size;        // SEI message payload size
 
-      sei_index = 7;
-      // Copy uuid,
-      for (i = 0; i < MYFILTER_SEI_UUID_SIZE; i++)
-      {
-        map.data[sei_index++] = uuid[i];
-      }
+            sei_index = 7;
+            // Copy uuid,
+            for (i = 0; i < MYFILTER_SEI_UUID_SIZE; i++)
+            {
+                map.data[sei_index++] = uuid[i];
+            }
 
-      // Copy data;
-      for (i = 0; i < sei_data_size; i++)
-      {
-        map.data[sei_index++] = i;
-      }
+            // Copy data;
+            for (i = 0; i < sei_data_size; i++)
+            {
+                map.data[sei_index++] = i;
+            }
 
-      // End byte is 0x80;
-      map.data[gbuffer_size - 1] = MYFILTER_SEI_TRAILING_BYTE;
+            // End byte is 0x80;
+            map.data[gbuffer_size - 1] = MYFILTER_SEI_TRAILING_BYTE;
 
-      // Unmap the buffer
-      gst_buffer_unmap(sei_buf, &map);
+            // Unmap the buffer
+            gst_buffer_unmap(sei_buf, &map);
 
-      // Push the SEI message downstream
-      gst_pad_push(filter->srcpad, sei_buf);
+            // Push the SEI message downstream
+            gst_pad_push(filter->srcpad, sei_buf);
+        }
+        else if (data[4] == MYFILTER_NALU_DELIMIT)
+        {
+            JustCaughtDelimiter = TRUE;
+        }
+        else
+        {
+            JustCaughtDelimiter = FALSE;
+        }
     }
-    else if (data[4] == MYFILTER_NALU_DELIMIT)
-    {
-      JustCaughtDelimiter = TRUE;
-    }
-    else
-    {
-      JustCaughtDelimiter = FALSE;
-    }
-  }
 
-  /* just push out the incoming buffer without touching it */
-  return gst_pad_push(filter->srcpad, buf);
+    /* just push out the incoming buffer without touching it */
+    return gst_pad_push(filter->srcpad, buf);
 }
 
 /* entry point to initialize the plug-in
@@ -356,14 +382,14 @@ gst_myfilter_chain(GstPad *pad, GstObject *parent, GstBuffer *buf)
 static gboolean
 myfilter_init(GstPlugin *myfilter)
 {
-  /* debug category for filtering log messages
-   *
-   * exchange the string 'Template myfilter' with your description
-   */
-  GST_DEBUG_CATEGORY_INIT(gst_myfilter_debug, "myfilter",
-                          0, "Template myfilter");
+    /* debug category for filtering log messages
+     *
+     * exchange the string 'Template myfilter' with your description
+     */
+    GST_DEBUG_CATEGORY_INIT(gst_myfilter_debug, "myfilter",
+                            0, "Template myfilter");
 
-  return GST_ELEMENT_REGISTER(myfilter, myfilter);
+    return GST_ELEMENT_REGISTER(myfilter, myfilter);
 }
 
 /* PACKAGE: this is usually set by meson depending on some _INIT macro

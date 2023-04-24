@@ -4,7 +4,7 @@
  * Copyright (C) 2005 Ronald S. Bultje <rbultje@ronald.bitfreak.net>
  * Copyright (C) 2020 Niels De Graef <niels.degraef@gmail.com>
  * Copyright (C) 2023  <<user@hostname.org>>
- * 
+ *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
  * to deal in the Software without restriction, including without limitation
@@ -49,30 +49,36 @@
 
 #include <gst/gst.h>
 
-#define MYFILTER_NALU_SPS       0x67
-#define MYFILTER_NALU_PPS       0x68
-#define MYFILTER_NALU_DELIMIT   0x09
-#define MYFILTER_NALU_SEI       0x66
+#define MYFILTER_NALU_SPS 0x67
+#define MYFILTER_NALU_PPS 0x68
+#define MYFILTER_NALU_DELIMIT 0x09
+#define MYFILTER_NALU_SEI 0x66
 
-#define MYFILTER_SEI_MSG_SIZE      0x40
-#define MYFILTER_SEI_NALU_TYPE     0x06
-#define MYFILTER_SEI_PAYLOAD_TYPE  0x05
-#define MYFILTER_SEI_UUID_SIZE     0x10
+#define MYFILTER_SEI_MSG_SIZE 0x40
+#define MYFILTER_SEI_NALU_TYPE 0x06
+#define MYFILTER_SEI_PAYLOAD_TYPE 0x05
+#define MYFILTER_SEI_UUID_SIZE 0x10
 #define MYFILTER_SEI_TRAILING_BYTE 0x80
 
 G_BEGIN_DECLS
 
 #define GST_TYPE_MYFILTER (gst_myfilter_get_type())
-G_DECLARE_FINAL_TYPE (Gstmyfilter, gst_myfilter,
-    GST, MYFILTER, GstElement)
+G_DECLARE_FINAL_TYPE(Gstmyfilter, gst_myfilter,
+                     GST, MYFILTER, GstElement)
+
+#define MYFILTER_DATA_MAX_LEN       128
+#define MYFILTER_DATA_DEFAULT_LEN   0 
 
 struct _Gstmyfilter
 {
-  GstElement element;
+    GstElement element;
 
-  GstPad *sinkpad, *srcpad;
+    GstPad *sinkpad, *srcpad;
 
-  gboolean silent;
+    gboolean silent;
+
+    guint8 data[MYFILTER_DATA_MAX_LEN];
+    guint datalen;
 };
 
 G_END_DECLS
