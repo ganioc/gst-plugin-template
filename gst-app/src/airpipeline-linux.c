@@ -60,6 +60,8 @@ int run_pipeline_linux(int argc, char *argv[], void *args)
     // data.queue = gst_element_factory_make("queue", "queue");
     g_print("create caps2\n");
     data.cpasparse = gst_element_factory_make("capsfilter", "caps2");
+    g_print("create myfilter\n");
+    data.myfilter = gst_element_factory_make("myfilter", "myfilter");
     g_print("create avdec\n");
     data.avdec = gst_element_factory_make("avdec_h264", "avdec");
     g_print("create convert2\n");
@@ -94,7 +96,7 @@ int run_pipeline_linux(int argc, char *argv[], void *args)
             "alignment", G_TYPE_STRING, "nal",
             NULL
         ), NULL);
-    if(!data.convert2){
+    if(!data.myfilter){
         g_printerr("Quit element creation\n");
         return -1;
     }
@@ -107,6 +109,7 @@ int run_pipeline_linux(int argc, char *argv[], void *args)
         !data.capsenc ||
         !data.parse ||
         !data.cpasparse ||
+        !data.myfilter ||
         !data.avdec ||
         !data.convert2 ||
         !data.sink
@@ -126,6 +129,7 @@ int run_pipeline_linux(int argc, char *argv[], void *args)
         data.capsenc,
         data.parse,
         data.cpasparse,
+        data.myfilter,
         data.avdec,
         data.convert2,
         data.sink, NULL);
@@ -138,6 +142,7 @@ int run_pipeline_linux(int argc, char *argv[], void *args)
         data.capsenc,
         data.parse,
         data.cpasparse,
+        data.myfilter,
         data.avdec,
         data.convert2,
         data.sink, NULL))

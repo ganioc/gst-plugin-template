@@ -32,6 +32,7 @@ typedef struct _LinuxData{
     GstElement *capsenc;
     GstElement *parse;
     GstElement *cpasparse;
+    GstElement *myfilter;
     GstElement *avdec;
     GstElement *convert2;
     GstElement *sink;
