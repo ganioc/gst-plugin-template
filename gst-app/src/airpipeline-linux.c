@@ -15,8 +15,7 @@ static gpointer thread_main_func(gpointer indata){
     while(thread_main_shutdown == FALSE){
         g_usleep(3000000);
         g_print("Thread running\n");
-        g_print("Set datalen to %d\n", data_len);
-        g_object_set (data.myfilter, "datalen", data_len++, NULL);
+
         if(data_len >= 8){
             data_len = 0;
         }
@@ -139,6 +138,10 @@ int run_pipeline_linux(int argc, char *argv[], void *args)
             "alignment", G_TYPE_STRING, "nal",
             NULL
         ), NULL);
+
+    g_print("Set datalen to %d\n", data_len);
+    g_object_set (data.myfilter, "datalen", data_len++, NULL);
+
     if(!data.myfilter){
         g_printerr("Quit element creation\n");
         return -1;
