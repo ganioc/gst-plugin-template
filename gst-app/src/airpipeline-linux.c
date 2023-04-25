@@ -16,12 +16,13 @@ static gpointer thread_main_func(gpointer indata){
         g_usleep(3000000);
         g_print("Thread running\n");
 
-        if(data_len >= 8){
+        if(data_len >= 12){
             data_len = 0;
         }
         data_arr[0] = data_len;
-        g_print("Set data content\n");
-        g_object_set(data.myfilter, "data", data_arr, NULL);
+        g_print("Set datalen to %d\n", data_len);
+        g_object_set (data.myfilter, "datalen", data_len++, NULL);
+
     }
 
     g_print("Thread main exited\n");
@@ -139,8 +140,8 @@ int run_pipeline_linux(int argc, char *argv[], void *args)
             NULL
         ), NULL);
 
-    g_print("Set datalen to %d\n", data_len);
-    g_object_set (data.myfilter, "datalen", data_len++, NULL);
+    g_print("Set data content\n");
+    g_object_set(data.myfilter, "data", data_arr, NULL);
 
     if(!data.myfilter){
         g_printerr("Quit element creation\n");

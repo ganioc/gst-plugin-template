@@ -202,6 +202,8 @@ gst_myfilter_init(Gstmyfilter *filter)
     filter->silent = FALSE;
 
     filter->datalen = MYFILTER_DATA_DEFAULT_LEN;
+
+    g_mutex_init(&filter->mutex);
 }
 
 static void
@@ -216,7 +218,9 @@ gst_myfilter_set_property(GObject *object, guint prop_id,
         filter->silent = g_value_get_boolean(value);
         break;
     case PROP_DATALEN:
+        g_mutex_lock(&filter->mutex);
         filter->datalen = g_value_get_uint(value);
+        g_mutex_unlock(&filter->mutex);
         break;
     case PROP_DATA:
         filter->data = g_value_get_pointer(value);
@@ -239,7 +243,9 @@ gst_myfilter_get_property(GObject *object, guint prop_id,
         g_value_set_boolean(value, filter->silent);
         break;
     case PROP_DATALEN:
+        g_mutex_lock(&filter->mutex);
         g_value_set_uint64(value, filter->datalen);
+        g_mutex_unlock(&filter->mutex);
         break;
     case PROP_DATA:
         g_value_set_pointer(value, filter->data);
@@ -318,6 +324,7 @@ gst_myfilter_chain(GstPad *pad, GstObject *parent, GstBuffer *buf)
 
             JustCaughtDelimiter = FALSE;
 
+            g_mutex_lock(&filter->mutex);
             guint8 sei_index = 0, sei_data_size = filter->datalen, i = 0;
             ;
             guint16 gbuffer_size = 4 + 3 + 16 + sei_data_size + 1;
@@ -349,6 +356,8 @@ gst_myfilter_chain(GstPad *pad, GstObject *parent, GstBuffer *buf)
                 g_print("%02x ", filter->data[i]);
             }
             g_print("\n");
+            filter->datalen = 0;
+            g_mutex_unlock(&filter->mutex);
 
             // End byte is 0x80;
             map.data[gbuffer_size - 1] = MYFILTER_SEI_TRAILING_BYTE;

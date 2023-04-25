@@ -79,6 +79,8 @@ struct _Gstmyfilter
 
     guint8 *data;
     guint datalen;
+
+    GMutex mutex;
 };
 
 G_END_DECLS
