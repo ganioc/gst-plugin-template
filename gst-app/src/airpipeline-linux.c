@@ -37,10 +37,10 @@ static void print_params(Params *param){
     g_print("video format: %s\n", param->video);
     g_print("----------------------\n");
 }
-int config_pipeline_camera(){
-    /* Create the empty pipeline */
-    g_print("create pipeline\n");
-    data.pipeline = gst_pipeline_new("pipeline");
+
+#ifdef ENABLE_CAMERA
+int config_pipeline(){
+
 
     /* Create the elements */
     g_print("create source\n");
@@ -69,7 +69,7 @@ int config_pipeline_camera(){
     // g_print("create queue\n");
     // data.queue = gst_element_factory_make("queue", "queue");
     g_print("create caps2\n");
-    data.cpasparse = gst_element_factory_make("capsfilter", "caps2");
+    data.capsparse = gst_element_factory_make("capsfilter", "caps2");
     g_print("create myfilter\n");
     data.myfilter = gst_element_factory_make("myfilter", "myfilter");
     g_print("create avdec\n");
@@ -98,7 +98,7 @@ int config_pipeline_camera(){
             NULL
         ), NULL);
     g_print("set caps after parse\n");
-    g_object_set(G_OBJECT(data.cpasparse),
+    g_object_set(G_OBJECT(data.capsparse),
         "caps",
         gst_caps_new_simple(
             "video/x-h264",
@@ -122,7 +122,7 @@ int config_pipeline_camera(){
         !data.enc ||
         !data.capsenc ||
         !data.parse ||
-        !data.cpasparse ||
+        !data.capsparse ||
         !data.myfilter ||
         !data.avdec ||
         !data.convert2 ||
@@ -142,7 +142,7 @@ int config_pipeline_camera(){
         data.enc,
         data.capsenc,
         data.parse,
-        data.cpasparse,
+        data.capsparse,
         data.myfilter,
         data.avdec,
         data.convert2,
@@ -155,7 +155,7 @@ int config_pipeline_camera(){
         data.enc,
         data.capsenc,
         data.parse,
-        data.cpasparse,
+        data.capsparse,
         data.myfilter,
         data.avdec,
         data.convert2,
@@ -172,9 +172,129 @@ int config_pipeline_camera(){
     g_object_set(G_OBJECT(data.sink), "sync", FALSE, NULL);
     return 0;
 }
-int config_pipeline_rtp(){
+#else 
+int config_pipeline(){
+    g_print("create source\n");
+    data.source = gst_element_factory_make("udpsrc", "source");
+
+    g_print("create caps\n");
+    data.capssource = gst_element_factory_make("capsfilter", "caps1");
+
+    g_print("create rtph264depay\n");
+    data.depay = gst_element_factory_make("rtph264depay", "depay");
+
+    g_print("create h264parse\n");
+    data.parse = gst_element_factory_make("h264parse","h264parse");
+
+    g_print("create caps2\n");
+    data.capsparse = gst_element_factory_make("capsfilter", "caps2");
+
+    g_print("create myfilter\n");
+    data.myfilter = gst_element_factory_make("myfilter", "myfilter");  
+
+    g_print("create queue\n");
+    data.queue = gst_element_factory_make("queue", "queue");
+
+    g_print("create avdec\n");
+    data.avdec = gst_element_factory_make("avdec_h264", "avdec");
+
+    g_print("create convert2\n");
+    data.convert2 = gst_element_factory_make("videoconvert", "convert2");
+
+    g_print("create sink\n");
+    data.sink = gst_element_factory_make("autovideosink", "sink");
+
+    g_print("set caps after source\n");
+    g_object_set(G_OBJECT(data.capssource),
+        "caps",
+        gst_caps_new_simple(
+            "application/x-rtp",
+            "media", G_TYPE_STRING,"video",
+            "clock-rate", G_TYPE_INT,90000,
+            "encoding-name",G_TYPE_STRING, "H264",
+            "payload",G_TYPE_INT,96,
+            NULL
+        ), NULL);
+
+    g_print("set caps after parse\n");
+    g_object_set(G_OBJECT(data.capsparse),
+        "caps",
+        gst_caps_new_simple(
+            "video/x-h264",
+            "stream-format", G_TYPE_STRING,"byte-stream",
+            "alignment", G_TYPE_STRING, "nal",
+            NULL
+        ), NULL);    
+
+
+    g_print("Set data content\n");
+    g_object_set(data.myfilter, "data", data_arr, NULL);
+
+    if(!data.myfilter){
+        g_printerr("Quit element creation\n");
+        return -1;
+    }
+
+    if (!data.pipeline || 
+        !data.source || 
+        !data.capssource ||
+        !data.depay ||
+        !data.parse ||
+        !data.capsparse ||
+        !data.queue ||
+        !data.myfilter ||
+        !data.avdec ||
+        !data.convert2 ||
+        !data.sink
+        )
+    {
+        g_printerr("Not all elements could be created.\n");
+        return -1;
+    }
+
+    /* Build the pipeline */
+    g_print("build the pipeline\n");
+    gst_bin_add_many(GST_BIN(data.pipeline), 
+        data.source, 
+        data.capssource,
+        data.depay,
+        data.parse,
+        data.capsparse,
+        data.myfilter,
+        data.queue,
+        data.avdec,
+        data.convert2,
+        data.sink, NULL);
+
+    g_print("link many\n");
+    if (!gst_element_link_many(data.source, 
+        data.capssource,
+        data.depay,
+        data.parse,
+        data.capsparse,
+        data.myfilter,
+        data.queue,
+        data.avdec,
+        data.convert2,
+        data.sink, NULL))
+    {
+        g_printerr("Elements could not be linked.\n");
+        gst_object_unref(data.pipeline);
+        return -1;
+    }
+
+    g_print("set source caps\n");
+    g_object_set(G_OBJECT(data.source), 
+        "port", 9988,
+        "address", "127.0.0.1",
+        NULL);
+
+    g_object_set(G_OBJECT(data.sink), "sync", FALSE, NULL);
+
     return 0;
 }
+#endif
+
 int run_pipeline_linux(int argc, char *argv[], void *args)
 {
     // GstElement *pipeline, *source, *sink;
@@ -207,9 +327,13 @@ int run_pipeline_linux(int argc, char *argv[], void *args)
     g_print("run pipeline()\n");
     print_params(&params);
 
+    /* Create the empty pipeline */
+    g_print("create pipeline\n");
+    data.pipeline = gst_pipeline_new("pipeline");
 
-    if(config_pipeline_camera() != 0){
-        g_print("Config pipeline failed\n");
+
+    if(config_pipeline() != 0){
+        g_print("Config pipeline  failed\n");
         return -1;
     }
 

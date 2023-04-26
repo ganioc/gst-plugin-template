@@ -5,6 +5,8 @@
 
 #define DATA_ARR_LEN    128
 
+// #define ENABLE_CAMERA
+#define ENABLE_RTP      1
 
 
 typedef struct _Params
@@ -26,6 +28,8 @@ typedef struct _CustomData {
     GstElement *avdec;
     GstElement *sink;
 } CustomData;
+
+#ifdef ENABLE_CAMERA
 typedef struct _LinuxData{
     GstElement *pipeline;
     GstElement *source;
@@ -34,13 +38,29 @@ typedef struct _LinuxData{
     GstElement *enc;
     GstElement *capsenc;
     GstElement *parse;
-    GstElement *cpasparse;
+    GstElement *capsparse;
+    GstElement *myfilter;
+    GstElement *avdec;
+    GstElement *convert2;
+    GstElement *sink;
+} LinuxData;
+#else
+// ENABLE_RTP
+typedef struct _LinuxData{
+    GstElement *pipeline;
+    GstElement *source;
+    GstElement *capssource;
+    GstElement *depay;
+    GstElement *parse;
+    GstElement *capsparse;
+    GstElement *queue;
     GstElement *myfilter;
     GstElement *avdec;
     GstElement *convert2;
     GstElement *sink;
 
 } LinuxData;
+#endif
 
 int run_pipeline_macos(int argc, char *argv[], void *args);
 int run_pipeline_linux(int argc, char *argv[], void *args);

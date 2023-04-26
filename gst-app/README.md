@@ -73,7 +73,8 @@ Command line:
 gst-launch-1.0 v4l2src device=/dev/video0 ! video/x-raw,width=640,height=480  ! videoconvert ! x264enc !  video/x-h264,stream-format=byte-stream  !  h264parse ! video/x-h264,stream-format=byte-stream,alignment=nal  ! rtph264pay ! udpsink host=127.0.0.1 port=9988
 
 # 接收
-gst-launch-1.0 -v udpsrc port=9988 caps="application/x-rtp,media=(string)video,clock-rate=(int)90000,encoding-name=(string)H264,payload=(int)96" !  rtph264depay ! h264parse ! video/x-h264,stream-format=byte-stream,alignment=nal ! queue !  avdec_h264 ! videoconvert   !  autovideosink sync=FALSE
+# udpsrc doesn't have property caps, use capsfilter, 
+gst-launch-1.0 -v udpsrc port=9988 caps="application/x-rtp,media=(string)video,clock-rate=(int)90000,encoding-name=(string)H264,payload=(int)96" !  rtph264depay ! h264parse ! video/x-h264,stream-format=byte-stream,alignment=nal ! myfilter  ! queue !  avdec_h264 ! videoconvert   !  autovideosink sync=FALSE
 
 ```
 
