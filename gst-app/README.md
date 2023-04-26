@@ -1,19 +1,23 @@
-## Airplane
+
+# Airplane
+
 It is a executable to run GStreamer pipeline, using a custom plugin to insert SEI message into H.264 byte-stream.
 
 ## Requirements
+
 ### Input options
 
 - Url for curl destination
-    * ip address
-    * port
+-
+  - ip address
+  - port
 - SEI message
-    * uuid (16 bytes)
-    * send SEI before IDR frame, just before SPS NAL unit
-    * 
-- Video format, 
-    * h.264
-    * h.265
+  - uuid (16 bytes)
+  - send SEI before IDR frame, just before SPS NAL unit
+  -
+- Video format,
+  - h.264
+  - h.265
 
 ### Interactive Control
 
@@ -25,6 +29,8 @@ It is a executable to run GStreamer pipeline, using a custom plugin to insert SE
 ### command line format
 
 ```shell
+$ export GST_PLUGIN_PATH=/home/ruff/project/gstreamer/gst-plugin-template/build/gst-plugin 
+
 $ ./airplane --host=127.0.0.1 \
     --port=5001 \
     --uuid=xxxxxxxxxxxxxx \
@@ -40,6 +46,7 @@ format -  [gps | custom], data format got from host:port, default is gps
 maxlen -  [uint], max length of the data, maximum data length from host:port, it will be cut to less than the len, default is 32
 
 ## Linux version
+
 Gstreamer pipeline command
 
 ```shell
@@ -51,10 +58,29 @@ Add filter, myfilter
 ```shell
 export GST_PLUGIN_PATH=/home/ruff/project/gstreamer/gst-plugin-template/build/gst-plugin 
 
-gst-launch-1.0 v4l2src device=/dev/video0 ! video/x-raw,width=640,height=480  ! videoconvert ! x264enc !  video/x-h264,stream-format=byte-stream  !  h264parse ! video/x-h264,stream-format=byte-stream,alignment=nal  ! myfilter  !  avdec_h264  ! videoconvert !  autovideosink sync=false
+gst-launch-1.0 v4l2src device=/dev/video0 ! video/x-raw,width=640,height=480  ! videoconvert ! x264enc !  video/x-h264,stream-format=byte-stream  !  h264parse ! video/x-h264,stream-format=byte-stream,alignment=nal  ! myfilter  !  avdec_h264  ! videoconvert !  autovideosink sync=FALSE
+
+```
+
+### Using RTP
+
+Open rtp port, and then add SEI message, and forward to SRT port.
+
+Command line:
+
+```shell
+# 发送
+gst-launch-1.0 v4l2src device=/dev/video0 ! video/x-raw,width=640,height=480  ! videoconvert ! x264enc !  video/x-h264,stream-format=byte-stream  !  h264parse ! video/x-h264,stream-format=byte-stream,alignment=nal  ! rtph264pay ! udpsink host=127.0.0.1 port=9988
+
+# 接收
+gst-launch-1.0 -v udpsrc port=9988 caps="application/x-rtp,media=(string)video,clock-rate=(int)90000,encoding-name=(string)H264,payload=(int)96" !  rtph264depay ! h264parse ! video/x-h264,stream-format=byte-stream,alignment=nal ! queue !  avdec_h264 ! videoconvert   !  autovideosink sync=FALSE
 
 ```
 
 
+
 ## Macos version
+
 Test can be done, but parameter can not be set.
+
+

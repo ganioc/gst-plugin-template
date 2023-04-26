@@ -37,40 +37,7 @@ static void print_params(Params *param){
     g_print("video format: %s\n", param->video);
     g_print("----------------------\n");
 }
-
-int run_pipeline_linux(int argc, char *argv[], void *args)
-{
-    // GstElement *pipeline, *source, *sink;
-    GstBus *bus;
-    GstMessage *msg;
-    GstStateChangeReturn ret;
-    // GstElement *local_source;
-
-    GThread *thread;
-
-    g_print("Create a thread\n");
-    memset(data_arr, 0, sizeof(data_arr));
-    data_len = 0;
-    for(guint i = 0; i< 16; i++){
-        data_arr[i] = i+1;
-    }
-
-    thread = g_thread_new("thread_main",
-        thread_main_func,
-        NULL);
-    if(!thread){
-        g_print("Can not create thread_main\n");
-        return(-1);
-    }
-
-    /* Initialize GStreamer */
-    gst_init(&argc, &argv);
-
-    // demo();
-    g_print("run pipeline()\n");
-    print_params(&params);
-
-
+int config_pipeline_camera(){
     /* Create the empty pipeline */
     g_print("create pipeline\n");
     data.pipeline = gst_pipeline_new("pipeline");
@@ -203,6 +170,48 @@ int run_pipeline_linux(int argc, char *argv[], void *args)
     g_print("set source /dev/video0\n");
     g_object_set(G_OBJECT(data.source), "device", "/dev/video0", NULL);
     g_object_set(G_OBJECT(data.sink), "sync", FALSE, NULL);
+    return 0;
+}
+int config_pipeline_rtp(){
+    return 0;
+}
+int run_pipeline_linux(int argc, char *argv[], void *args)
+{
+    // GstElement *pipeline, *source, *sink;
+    GstBus *bus;
+    GstMessage *msg;
+    GstStateChangeReturn ret;
+    // GstElement *local_source;
+
+    GThread *thread;
+
+    g_print("Create a thread\n");
+    memset(data_arr, 0, sizeof(data_arr));
+    data_len = 0;
+    for(guint i = 0; i< 16; i++){
+        data_arr[i] = i+1;
+    }
+
+    thread = g_thread_new("thread_main",
+        thread_main_func,
+        NULL);
+    if(!thread){
+        g_print("Can not create thread_main\n");
+        return(-1);
+    }
+
+    /* Initialize GStreamer */
+    gst_init(&argc, &argv);
+
+    // demo();
+    g_print("run pipeline()\n");
+    print_params(&params);
+
+
+    if(config_pipeline_camera() != 0){
+        g_print("Config pipeline failed\n");
+        return -1;
+    }
 
     
     // create capsfilter h264-filter
@@ -260,14 +269,6 @@ int run_pipeline_linux(int argc, char *argv[], void *args)
     gst_object_unref(bus);
     gst_element_set_state(data.pipeline, GST_STATE_NULL);
     gst_object_unref(data.pipeline);
-
-    // gst_object_unref(data.source);
-    // gst_object_unref(data.convert);
-    // gst_object_unref(data.enc);
-    // gst_object_unref(data.parse);
-    // gst_object_unref(data.avdec);
-    // gst_object_unref(data.convert2);
-    // gst_object_unref(data.sink);
 
     g_print("exit\n");
     return 0;
