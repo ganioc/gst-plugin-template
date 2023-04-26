@@ -201,6 +201,9 @@ int config_pipeline(){
     g_print("create convert2\n");
     data.convert2 = gst_element_factory_make("videoconvert", "convert2");
 
+    g_print("create textoverlay\n");
+    data.text = gst_element_factory_make("textoverlay","text");
+
     g_print("create sink\n");
     data.sink = gst_element_factory_make("autovideosink", "sink");
 
@@ -231,9 +234,18 @@ int config_pipeline(){
     g_object_set(data.myfilter, "data", data_arr, NULL);
 
     if(!data.myfilter){
-        g_printerr("Quit element creation\n");
+        g_printerr("Quit element creation\n"); 
         return -1;
     }
+
+    g_print("set textoverlay\n");
+    g_object_set(data.text,
+        "text","Hi RTP",
+        "valignment", 2,
+        "halignment", 0,
+        "font-desc","Sans,16",
+        NULL
+        );
 
     if (!data.pipeline || 
         !data.source || 
@@ -245,6 +257,7 @@ int config_pipeline(){
         !data.myfilter ||
         !data.avdec ||
         !data.convert2 ||
+        !data.text ||
         !data.sink
         )
     {
@@ -264,6 +277,7 @@ int config_pipeline(){
         data.queue,
         data.avdec,
         data.convert2,
+        data.text,
         data.sink, NULL);
 
     g_print("link many\n");
@@ -276,6 +290,7 @@ int config_pipeline(){
         data.queue,
         data.avdec,
         data.convert2,
+        data.text,
         data.sink, NULL))
     {
         g_printerr("Elements could not be linked.\n");

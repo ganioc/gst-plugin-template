@@ -78,6 +78,14 @@ gst-launch-1.0 -v udpsrc port=9988 caps="application/x-rtp,media=(string)video,c
 
 ```
 
+### Add some text
+
+textoverlay text="Hi StackOverflow" valignment=top halignment=left font-desc="Sans, 12"
+
+```shell
+gst-launch-1.0 -v udpsrc port=9988 caps="application/x-rtp,media=(string)video,clock-rate=(int)90000,encoding-name=(string)H264,payload=(int)96" !  rtph264depay ! h264parse ! video/x-h264,stream-format=byte-stream,alignment=nal ! myfilter  ! queue !  avdec_h264 ! videoconvert   ! textoverlay text="Hi RTP" valignment=top halignment=left font-desc="Sans, 16" !  autovideosink sync=FALSE
+
+```
 
 
 ## Macos version

@@ -57,6 +57,7 @@ typedef struct _LinuxData{
     GstElement *myfilter;
     GstElement *avdec;
     GstElement *convert2;
+    GstElement *text;
     GstElement *sink;
 
 } LinuxData;
