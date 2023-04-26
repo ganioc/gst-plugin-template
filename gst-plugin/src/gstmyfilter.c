@@ -79,7 +79,9 @@ enum
     PROP_0,
     PROP_SILENT,
     PROP_DATALEN,
-    PROP_DATA
+    PROP_DATA,
+    PROP_DATAOUT,
+    PROP_DATAOUTLEN
 };
 
 static gboolean JustCaughtDelimiter = FALSE;
@@ -144,28 +146,46 @@ gst_myfilter_class_init(GstmyfilterClass *klass)
                                         FALSE,
                                         G_PARAM_READWRITE));
     // add datlen property to the class
-    g_object_class_install_property(gobject_class, 
-        PROP_DATALEN,
-        g_param_spec_uint(
-            "datalen",
-            "DataLen",
-            "Data Length",
-            0, 
-            MYFILTER_DATA_MAX_LEN,
-            0, 
-            G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
-    
+    g_object_class_install_property(gobject_class,
+                                    PROP_DATALEN,
+                                    g_param_spec_uint(
+                                        "datalen",
+                                        "DataLen",
+                                        "Data Length",
+                                        0,
+                                        MYFILTER_DATA_MAX_LEN,
+                                        0,
+                                        G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
+
     // add data array
     g_object_class_install_property(gobject_class,
-        PROP_DATA,
-        g_param_spec_pointer(
-            "data",
-            "dataarr",
-            "A data array",
-            G_PARAM_READWRITE
-        )
-    );
-    
+                                    PROP_DATA,
+                                    g_param_spec_pointer(
+                                        "data",
+                                        "dataarr",
+                                        "A data array",
+                                        G_PARAM_READWRITE));
+
+    // add datout len property to the class
+    g_object_class_install_property(gobject_class,
+                                    PROP_DATAOUTLEN,
+                                    g_param_spec_uint(
+                                        "dataoutlen",
+                                        "DataOutLen",
+                                        "DataOut Length",
+                                        0,
+                                        MYFILTER_DATA_MAX_LEN,
+                                        0,
+                                        G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
+
+    // add dataout array
+    g_object_class_install_property(gobject_class,
+                                    PROP_DATAOUT,
+                                    g_param_spec_pointer(
+                                        "dataout",
+                                        "dataoutarr",
+                                        "A dataout array",
+                                        G_PARAM_READWRITE));
 
     gst_element_class_set_details_simple(gstelement_class,
                                          "myfilter",
@@ -204,6 +224,8 @@ gst_myfilter_init(Gstmyfilter *filter)
     filter->datalen = MYFILTER_DATA_DEFAULT_LEN;
 
     g_mutex_init(&filter->mutex);
+
+    filter->dataoutlen = MYFILTER_DATA_DEFAULT_LEN;
 }
 
 static void
@@ -222,8 +244,14 @@ gst_myfilter_set_property(GObject *object, guint prop_id,
         filter->datalen = g_value_get_uint(value);
         g_mutex_unlock(&filter->mutex);
         break;
+    case PROP_DATAOUTLEN:
+        filter->dataoutlen = g_value_get_uint(value);
+        break;
     case PROP_DATA:
         filter->data = g_value_get_pointer(value);
+        break;
+    case PROP_DATAOUT:
+        filter->dataout = g_value_get_pointer(value);
         break;
     default:
         G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
@@ -247,8 +275,16 @@ gst_myfilter_get_property(GObject *object, guint prop_id,
         g_value_set_uint64(value, filter->datalen);
         g_mutex_unlock(&filter->mutex);
         break;
+    case PROP_DATAOUTLEN:
+        g_mutex_lock(&filter->mutex);
+        g_value_set_uint(value, filter->dataoutlen);
+        g_mutex_unlock(&filter->mutex);
+        break;
     case PROP_DATA:
         g_value_set_pointer(value, filter->data);
+        break;
+    case PROP_DATAOUT:
+        g_value_set_pointer(value, filter->dataout);
         break;
     default:
         G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
@@ -353,10 +389,16 @@ gst_myfilter_chain(GstPad *pad, GstObject *parent, GstBuffer *buf)
             for (i = 0; i < sei_data_size; i++)
             {
                 map.data[sei_index++] = filter->data[i];
+                filter->dataout[i] = filter->data[i];
                 g_print("%02x ", filter->data[i]);
             }
+            filter->dataout[i] = 0;
             g_print("\n");
             filter->datalen = 0;
+
+            // set output to textoverlay
+            filter->dataoutlen = sei_data_size;
+
             g_mutex_unlock(&filter->mutex);
 
             // End byte is 0x80;

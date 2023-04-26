@@ -80,6 +80,9 @@ struct _Gstmyfilter
     guint8 *data;
     guint datalen;
 
+    guint8 *dataout;
+    guint dataoutlen;
+
     GMutex mutex;
 };
 
