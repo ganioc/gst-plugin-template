@@ -110,8 +110,8 @@ static GstStaticPadTemplate src_factory = GST_STATIC_PAD_TEMPLATE("src",
 #define gst_myfilter_parent_class parent_class
 G_DEFINE_TYPE(Gstmyfilter, gst_myfilter, GST_TYPE_ELEMENT);
 
-GST_ELEMENT_REGISTER_DEFINE(myfilter, "myfilter", GST_RANK_NONE,
-                            GST_TYPE_MYFILTER);
+//GST_ELEMENT_REGISTER_DEFINE(myfilter, "myfilter", GST_RANK_NONE,
+//                            GST_TYPE_MYFILTER);
 
 static void gst_myfilter_set_property(GObject *object,
                                       guint prop_id, const GValue *value, GParamSpec *pspec);
@@ -438,7 +438,10 @@ myfilter_init(GstPlugin *myfilter)
     GST_DEBUG_CATEGORY_INIT(gst_myfilter_debug, "myfilter",
                             0, "Template myfilter");
 
-    return GST_ELEMENT_REGISTER(myfilter, myfilter);
+    // return GST_ELEMENT_REGISTER(myfilter, myfilter);
+    return gst_element_register(myfilter, "myfilter",
+		    	GST_RANK_NONE,
+			GST_TYPE_MYFILTER);
 }
 
 /* PACKAGE: this is usually set by meson depending on some _INIT macro
