@@ -17,3 +17,10 @@ ninja -C build
 $  ./build/gst-app/airplane
 ```
 
+## H.264 NAL Unit format
+
+From camera,
+
+From rtp server,
+
+
