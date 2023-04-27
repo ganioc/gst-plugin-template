@@ -87,9 +87,16 @@ gst-launch-1.0 -v udpsrc port=9988 caps="application/x-rtp,media=(string)video,c
 
 ```
 
+### Using Relay on RK3568
+
+```shell
+gst-launch-1.0 -v udpsrc port=9988   caps="application/x-rtp, media=(string)video, clock-rate=(int)90000, encoding-name=(string)H264, payload=(int)96" !  rtph264depay ! h264parse ! video/x-h264,stream-format=byte-stream,alignment=nal ! myfilter ! queue !  rtph264pay ! udpsink host=192.168.31.133 port=9989
+
+```
 
 ## Macos version
 
 Test can be done, but parameter can not be set.
+
 
 
