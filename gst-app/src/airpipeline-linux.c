@@ -50,11 +50,12 @@ static gpointer thread_main_func(gpointer indata)
         // read the SEI message
         g_object_get(data.myfilter, "dataoutlen", &sei_len, NULL);
         g_print("Get SEI data len: %d\n", sei_len);
-
+#if defined (ENABLE_CAMERA) || defined (ENABLE_RTP)
         // set the data.text overlay
         g_object_set(data.text,
                      "text", get_format_str(dataout_arr, sei_len),
                      NULL);
+#endif
     }
 
     g_print("Thread main exited\n");
@@ -205,7 +206,7 @@ int config_pipeline()
     g_object_set(G_OBJECT(data.sink), "sync", FALSE, NULL);
     return 0;
 }
-#else
+#elif defined (ENABLE_RTP)
 int config_pipeline()
 {
     g_print("create source\n");
@@ -234,7 +235,6 @@ int config_pipeline()
 
     g_print("create convert2\n");
     data.convert2 = gst_element_factory_make("videoconvert", "convert2");
-
     g_print("create textoverlay\n");
     data.text = gst_element_factory_make("textoverlay", "text");
 
@@ -341,6 +341,9 @@ int config_pipeline()
 
     return 0;
 }
+#else
+
+
 #endif
 
 int run_pipeline_linux(int argc, char *argv[], void *args)

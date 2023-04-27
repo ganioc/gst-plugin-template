@@ -5,8 +5,13 @@
 
 #define DATA_ARR_LEN    128
 
+// send with camera, read direct from camera,
 // #define ENABLE_CAMERA
-#define ENABLE_RTP      1
+//
+#define ENABLE_RK3568      1
+
+// send with RTP, it's for Linux, read from RTP,
+// #define ENABLE_RTP      1
 
 
 typedef struct _Params
@@ -44,7 +49,7 @@ typedef struct _LinuxData{
     GstElement *convert2;
     GstElement *sink;
 } LinuxData;
-#else
+#elif defined ENABLE_RTP
 // ENABLE_RTP
 typedef struct _LinuxData{
     GstElement *pipeline;
@@ -61,6 +66,24 @@ typedef struct _LinuxData{
     GstElement *sink;
 
 } LinuxData;
+
+#else
+typedef struct _LinuxData{
+    GstElement *pipeline;
+    GstElement *source;
+    GstElement *capssource;
+    GstElement *depay;
+    GstElement *parse;
+    GstElement *capsparse;
+    GstElement *queue;
+    GstElement *myfilter;
+    GstElement *rtph264pay;
+    GstElement *sink;
+
+} LinuxData;
+
+
+
 #endif
 
 int run_pipeline_macos(int argc, char *argv[], void *args);
