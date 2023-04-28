@@ -14,8 +14,11 @@
 // #define ENABLE_RTP      1
 
 
+#define SEI_MESSAGE_MAX_LEN 128
+
 typedef struct _Params
 {
+    gboolean fetchhost;
     gchar *host;
     guint port;
     gchar *outhost;

@@ -8,6 +8,7 @@
 #endif
 
 Params params = {
+    .fetchhost = FALSE,
     .host = "127.0.0.1",
     .port = 1234,
     .outhost = "127.0.0.1",
@@ -82,7 +83,8 @@ int parse_params(int argc, char **argv)
     const GOptionEntry entries[] = {
 	{"version", 'r',0,G_OPTION_ARG_NONE,&params.version,"version", NULL},
         {"verbose", 'v', 0, G_OPTION_ARG_NONE, &params.verbose, "executable verbose", NULL},
-        {"host", 'h',0, G_OPTION_ARG_STRING, &params.host, "in host ip address", NULL},
+	{"fetch", 'f',0,G_OPTION_ARG_NONE, &params.fetchhost, "fetch data from host ip address", NULL},
+        {"host", 'h',0, G_OPTION_ARG_STRING, &params.host, "host ip address for data input", NULL},
 	{"port", 'p',0,G_OPTION_ARG_INT, &params.port, "in host port", NULL},
 	{"outhost", 'g',0,G_OPTION_ARG_STRING, &params.outhost, "out host ip address", NULL},
 	{"outport", 'q',0,G_OPTION_ARG_INT, &params.outport, "out port", NULL},

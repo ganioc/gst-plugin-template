@@ -36,9 +36,13 @@ gchar *get_format_str(guint8 *arr, guint8 len)
 
     return str_arr;
 }
-
+gboolean fetch_from_host(){
+    // put data into data_arr;
+    // update data_len;
+    
+}
 static gpointer thread_main_func(gpointer indata)
-{
+
     guint sei_len = 0;
 
     g_print("Thread main started\n");
@@ -48,17 +52,27 @@ static gpointer thread_main_func(gpointer indata)
         g_usleep(3000000);
         g_print("Thread running\n");
 
-        if (data_len >= 12)
-        {
-            data_len = 0;
-        }
-        data_arr[0] = data_len;
+	// get data from host 
+	if( params.fetchhost == TRUE){
+	    if(fetch_from_host() == FALSE){
+		data_len = 0;
+	    }	
+
+	}else{
+	    if (data_len >= 12)
+            {
+                data_len = 0;
+            }
+            data_arr[0] = data_len++;
+	}
+        
         g_print("Set datalen to %d\n", data_len);
-        g_object_set(data.myfilter, "datalen", data_len++, NULL);
+        g_object_set(data.myfilter, "datalen", data_len, NULL);
 
         // read the SEI message
         g_object_get(data.myfilter, "dataoutlen", &sei_len, NULL);
         g_print("Get SEI data len: %d\n", sei_len);
+
 #if defined (ENABLE_CAMERA) || defined (ENABLE_RTP)
         // set the data.text overlay
         g_object_set(data.text,
