@@ -14,7 +14,8 @@ ninja -C build
 ## execute
 
 ```shell
-$  ./build/gst-app/airplane
+$ export GST_PLUGIN_PATH=/root/gst-prj/build/gst-plugin
+$ ./build/gst-app/airplane
 ```
 
 ## H.264 NAL Unit format

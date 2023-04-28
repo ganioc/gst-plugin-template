@@ -336,15 +336,78 @@ gst_myfilter_chain(GstPad *pad, GstObject *parent, GstBuffer *buf)
     Gstmyfilter *filter;
     GstMapInfo info;
     guint8 *data;
-    guint size;
-    // guint16 i = 0;
+    guint size, valid_size;
+    guint i, JustCaughtDelimiter = FALSE;
 
     filter = GST_MYFILTER(parent);
 
-    gst_buffer_map(buf, &info, GST_MAP_READ);
-    data = info.data;
-    size = info.size;
+    if(gst_buffer_map(buf, &info, GST_MAP_READ)){
 
+    	data = info.data;
+    	size = info.size;
+
+	
+	valid_size = (size >= 6)?6:size;
+
+    	g_print("data len: %di, valid_size: %d\n", size, valid_size);
+
+	for(i = 0; i< valid_size; i++){
+	    g_print("%02x ", data[i]);
+	}
+	g_print("\n");
+
+	if(valid_size >= 5
+	    && data[0] == 0x00
+	    && data[1] == 0x00
+	    && data[2] == 0x00
+	    && data[3] == 0x01
+	    && data[4] == MYFILTER_NALU_SPS){
+	    g_print("In chain(), send SEI\n");
+	    
+	    g_mutex_lock(&filter->mutex);
+
+	    guint8 sei_index = 0;
+	    guint8 sei_data_size = filter->datalen;
+	    guint gbuffer_size = 4 + 3 + 16 + sei_data_size + 1;
+	    GstMapInfo map;
+	    // Add the NAL unit header to the SEI message
+	    GstBuffer *sei_buf = gst_buffer_new_and_alloc(gbuffer_size);
+	    gst_buffer_map(sei_buf, &map, GST_MAP_WRITE);
+	    map.data[0] = 0x00;
+	    map.data[1] = 0x00;
+	    map.data[2] = 0x00;
+	    map.data[3] = 0x01;
+	    map.data[4] = MYFILTER_SEI_NALU_TYPE;
+	    map.data[5] = MYFILTER_SEI_PAYLOAD_TYPE;
+	    map.data[6] = 16 + sei_data_size;
+	    sei_index = 7;
+
+	    for(i=0; i< MYFILTER_SEI_UUID_SIZE; i++){
+		map.data[sei_index++] = uuid[i];
+	    }
+
+	    for(i=0; i< sei_data_size; i++){
+	        map.data[sei_index++] = filter->data[i];
+		filter->dataout[i] = filter->data[i];
+	    }
+	    filter->dataout[i] = 0;
+	    filter->datalen = 0;
+	    filter->dataoutlen = sei_data_size;
+	    
+	    map.data[sei_index] = MYFILTER_SEI_TRAILING_BYTE;
+
+	    gst_buffer_unmap(sei_buf, &map);
+	
+	    g_mutex_unlock(&filter->mutex);
+	    
+	    gst_pad_push(filter->srcpad, sei_buf);
+	    
+	}
+
+
+    	gst_buffer_unmap(buf, &info);
+    }
+/*
     if (size >= 5 &&
         data[0] == 0x00 &&
         data[1] == 0x00 &&
@@ -419,6 +482,8 @@ gst_myfilter_chain(GstPad *pad, GstObject *parent, GstBuffer *buf)
             JustCaughtDelimiter = FALSE;
         }
     }
+*/
+
 
     /* just push out the incoming buffer without touching it */
     return gst_pad_push(filter->srcpad, buf);
