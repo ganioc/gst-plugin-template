@@ -18,6 +18,8 @@ Params params = {
     .version = FALSE};
 gchar version[] = "version: 0.1";
 
+guint8 SEI_UUID[16];
+
 static void print_params(Params *param)
 {
     g_print("------- params -------\n");
@@ -30,8 +32,48 @@ static void print_params(Params *param)
     g_print("verbose: %d\n", param->verbose);
     g_print("----------------------\n");
 }
-int check_params(Params *param){
+gboolean valid_byte(gchar ch){ 
+    guint8 num = ch;
      
+    return (num >= '0' && num <= '9') || (num >= 'a' && num <= 'f');
+}
+int check_params(Params *param){
+    guint index = 0;
+    guint uuid_index = 0;
+    guint64 hex;
+    gchar hexstr[3];
+
+    // check uuid format,
+    for(index = 0; index < strlen(param->uuid); index++){
+        if(valid_byte(param->uuid[index]) == TRUE){
+            hexstr[0] = param->uuid[index];
+	}else{
+	    continue;
+	}
+	index++;
+	if(valid_byte(param->uuid[index]) == TRUE){
+	    hexstr[1] =  param->uuid[index];
+	}else{
+	    continue;
+	}
+	hexstr[2] = 0;
+	if(FALSE == g_ascii_string_to_unsigned(hexstr, 16, 0, 0xff, &hex, NULL)){
+	    continue;
+	}
+        //g_print("hexstr: %s, hex: %lx\n",hexstr,  hex);
+	SEI_UUID[uuid_index++] = (guint8)hex;
+    }
+    g_print("SEI_UUID: ");
+    for(guint i=0; i< 16; i++){
+	g_print("%02x ", SEI_UUID[i]);
+    }
+    g_print("\n");
+
+    if(uuid_index != 16){
+	g_print("wrong uuid format!\n");
+	return -1;
+    }
+
     return 0;
 }
 
@@ -93,7 +135,6 @@ int main(int argc, char *argv[])
 	g_print("Wrong params!\n");
 	return -1;
     }
-    return 0;
 
     g_print("In airplane app ...\n");
     

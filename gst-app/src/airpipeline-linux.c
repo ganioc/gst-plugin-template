@@ -2,6 +2,8 @@
 
 extern Params params;
 
+extern guint8 SEI_UUID[];
+
 // data array, to transfer to plugin
 static guint8 data_arr[DATA_ARR_LEN];
 static guint8 dataout_arr[DATA_ARR_LEN];
@@ -472,6 +474,12 @@ int run_pipeline_linux(int argc, char *argv[], void *args)
     // GstElement *local_source;
 
     GThread *thread;
+
+
+    g_print("Copy SEI_UUID\n");
+    for(guint i = 0; i<16; i++){
+	uuid_arr[i] = SEI_UUID[i];
+    }
 
     g_print("Create a thread\n");
     memset(data_arr, 0, sizeof(data_arr));
