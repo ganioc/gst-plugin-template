@@ -18,8 +18,11 @@ typedef struct _Params
 {
     gchar host[128];
     guint port;
+    gchar outhost[128];
+    gchar uuid[64];
+    guint outport;
     gchar video[24];
-    gboolean version;
+    gboolean verbose;
 } Params;
 
 typedef struct _CustomData {

@@ -70,15 +70,6 @@ static gpointer thread_main_func(gpointer indata)
     return NULL;
 }
 
-static void print_params(Params *param)
-{
-    g_print("------- params -------\n");
-    g_print("host: %s\n", param->host);
-    g_print("port: %d\n", param->port);
-    g_print("video format: %s\n", param->video);
-    g_print("----------------------\n");
-}
-
 #ifdef ENABLE_CAMERA
 int config_pipeline()
 {
@@ -504,7 +495,7 @@ int run_pipeline_linux(int argc, char *argv[], void *args)
 
     // demo();
     g_print("run pipeline()\n");
-    print_params(&params);
+    // print_params(&params);
 
     /* Create the empty pipeline */
     g_print("create pipeline\n");
