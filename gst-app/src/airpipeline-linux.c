@@ -7,6 +7,13 @@ static guint8 data_arr[DATA_ARR_LEN];
 static guint8 dataout_arr[DATA_ARR_LEN];
 static guint8 data_len;
 static gchar str_arr[4 * DATA_ARR_LEN];
+static guint8 uuid_arr[16] = {
+    0x08, 0x6f, 0x36, 0x93,
+    0xb7, 0xb3,
+    0x4f, 0x2c,
+    0x96, 0x53,
+    0x21, 0x49, 0x2f, 0xee, 0xe5, 0xb8};
+
 
 static LinuxData data;
 static gboolean thread_main_shutdown = FALSE;
@@ -143,6 +150,7 @@ int config_pipeline()
 
     g_print("Set data content\n");
     g_object_set(data.myfilter, "data", data_arr, NULL);
+    g_object_set(data.myfilter, "uuid", uuid_arr, NULL);
 
     if (!data.myfilter)
     {
@@ -266,6 +274,7 @@ int config_pipeline()
     g_print("Set data content\n");
     g_object_set(data.myfilter, "data", data_arr, NULL);
     g_object_set(data.myfilter, "dataout", dataout_arr, NULL);
+    g_object_set(data.myfilter, "uuid", uuid_arr, NULL);
 
     if (!data.myfilter)
     {
@@ -394,6 +403,7 @@ int config_pipeline(){
     g_print("Set data content\n");
     g_object_set(data.myfilter, "data", data_arr, NULL);
     g_object_set(data.myfilter, "dataout", dataout_arr, NULL);
+    g_object_set(data.myfilter, "uuid", uuid_arr, NULL);
 
     if (!data.myfilter)
     {

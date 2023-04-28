@@ -81,10 +81,11 @@ enum
     PROP_DATALEN,
     PROP_DATA,
     PROP_DATAOUT,
-    PROP_DATAOUTLEN
+    PROP_DATAOUTLEN,
+    PROP_UUID
 };
 
-static gboolean JustCaughtDelimiter = FALSE;
+// static gboolean JustCaughtDelimiter = FALSE;
 // 086f3693-b7b3-4f2c-9653-21492feee5b8
 static guint8 uuid[MYFILTER_SEI_UUID_SIZE] = {
     0x08, 0x6f, 0x36, 0x93,
@@ -165,6 +166,14 @@ gst_myfilter_class_init(GstmyfilterClass *klass)
                                         "dataarr",
                                         "A data array",
                                         G_PARAM_READWRITE));
+    // uuid array
+    g_object_class_install_property(gobject_class,
+		    		PROP_UUID,
+				g_param_spec_pointer(
+				    "uuid",
+				    "uuidarr",
+				    "UUID array",
+				    G_PARAM_READWRITE));
 
     // add datout len property to the class
     g_object_class_install_property(gobject_class,
@@ -250,6 +259,9 @@ gst_myfilter_set_property(GObject *object, guint prop_id,
     case PROP_DATA:
         filter->data = g_value_get_pointer(value);
         break;
+    case PROP_UUID:
+	filter->uuid = g_value_get_pointer(value);
+	break;
     case PROP_DATAOUT:
         filter->dataout = g_value_get_pointer(value);
         break;
@@ -283,6 +295,9 @@ gst_myfilter_get_property(GObject *object, guint prop_id,
     case PROP_DATA:
         g_value_set_pointer(value, filter->data);
         break;
+    case PROP_UUID:
+	g_value_set_pointer(value, filter->uuid);
+	break;
     case PROP_DATAOUT:
         g_value_set_pointer(value, filter->dataout);
         break;
@@ -337,7 +352,7 @@ gst_myfilter_chain(GstPad *pad, GstObject *parent, GstBuffer *buf)
     GstMapInfo info;
     guint8 *data;
     guint size, valid_size;
-    guint i, JustCaughtDelimiter = FALSE;
+    guint i; 
 
     filter = GST_MYFILTER(parent);
 
@@ -349,12 +364,12 @@ gst_myfilter_chain(GstPad *pad, GstObject *parent, GstBuffer *buf)
 	
 	valid_size = (size >= 6)?6:size;
 
-    	g_print("data len: %di, valid_size: %d\n", size, valid_size);
+    	//g_print("data len: %di, valid_size: %d\n", size, valid_size);
 
-	for(i = 0; i< valid_size; i++){
-	    g_print("%02x ", data[i]);
-	}
-	g_print("\n");
+	//for(i = 0; i< valid_size; i++){
+	//    g_print("%02x ", data[i]);
+	//}
+	//g_print("\n");
 
 	if(valid_size >= 5
 	    && data[0] == 0x00
@@ -384,11 +399,14 @@ gst_myfilter_chain(GstPad *pad, GstObject *parent, GstBuffer *buf)
 
 	    for(i=0; i< MYFILTER_SEI_UUID_SIZE; i++){
 		map.data[sei_index++] = uuid[i];
+
 	    }
+	    g_print("send sei_data:%d\n", sei_data_size);
 
 	    for(i=0; i< sei_data_size; i++){
 	        map.data[sei_index++] = filter->data[i];
 		filter->dataout[i] = filter->data[i];
+		
 	    }
 	    filter->dataout[i] = 0;
 	    filter->datalen = 0;
@@ -407,83 +425,6 @@ gst_myfilter_chain(GstPad *pad, GstObject *parent, GstBuffer *buf)
 
     	gst_buffer_unmap(buf, &info);
     }
-/*
-    if (size >= 5 &&
-        data[0] == 0x00 &&
-        data[1] == 0x00 &&
-        data[2] == 0x00 &&
-        data[3] == 0x01)
-    {
-        if (JustCaughtDelimiter == TRUE &&
-            data[4] == MYFILTER_NALU_SPS)
-        {
-            // Send SEI message out
-            g_print("In chain() , Send SEI()\n");
-            g_print("datalen: %d\n", filter->datalen);
-
-            JustCaughtDelimiter = FALSE;
-
-            g_mutex_lock(&filter->mutex);
-            guint8 sei_index = 0, sei_data_size = filter->datalen, i = 0;
-            ;
-            guint16 gbuffer_size = 4 + 3 + 16 + sei_data_size + 1;
-
-            // Add the NAL unit header to the SEI message
-            GstBuffer *sei_buf = gst_buffer_new_and_alloc(gbuffer_size);
-            GstMapInfo map;
-
-            gst_buffer_map(sei_buf, &map, GST_MAP_WRITE);
-            map.data[0] = 0x00;
-            map.data[1] = 0x00;
-            map.data[2] = 0x00;
-            map.data[3] = 0x01;
-            map.data[4] = MYFILTER_SEI_NALU_TYPE;    // NAL unit type for SEI message
-            map.data[5] = MYFILTER_SEI_PAYLOAD_TYPE; // SEI message payload type
-            map.data[6] = 16 + sei_data_size;        // SEI message payload size
-
-            sei_index = 7;
-            // Copy uuid,
-            for (i = 0; i < MYFILTER_SEI_UUID_SIZE; i++)
-            {
-                map.data[sei_index++] = uuid[i];
-            }
-
-            // Copy data;
-            for (i = 0; i < sei_data_size; i++)
-            {
-                map.data[sei_index++] = filter->data[i];
-                filter->dataout[i] = filter->data[i];
-                g_print("%02x ", filter->data[i]);
-            }
-            filter->dataout[i] = 0;
-            g_print("\n");
-            filter->datalen = 0;
-
-            // set output to textoverlay
-            filter->dataoutlen = sei_data_size;
-
-            g_mutex_unlock(&filter->mutex);
-
-            // End byte is 0x80;
-            map.data[gbuffer_size - 1] = MYFILTER_SEI_TRAILING_BYTE;
-
-            // Unmap the buffer
-            gst_buffer_unmap(sei_buf, &map);
-
-            // Push the SEI message downstream
-            gst_pad_push(filter->srcpad, sei_buf);
-        }
-        else if (data[4] == MYFILTER_NALU_DELIMIT)
-        {
-            JustCaughtDelimiter = TRUE;
-        }
-        else
-        {
-            JustCaughtDelimiter = FALSE;
-        }
-    }
-*/
-
 
     /* just push out the incoming buffer without touching it */
     return gst_pad_push(filter->srcpad, buf);
