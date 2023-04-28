@@ -16,12 +16,13 @@
 
 typedef struct _Params
 {
-    gchar host[128];
+    gchar *host;
     guint port;
-    gchar outhost[128];
-    gchar uuid[64];
+    gchar *outhost;
+    gchar *uuid;
     guint outport;
-    gchar video[24];
+    gchar *video;
+    gboolean version;
     gboolean verbose;
 } Params;
 
