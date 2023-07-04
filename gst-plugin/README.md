@@ -26,3 +26,15 @@ data size:9143
 data: 00  00 00 01 41 9E
 
 ```
+
+## SEIFilter
+对SEI流进行修改,
+
+
+## python3 
+
+```shell
+$ python3 -m http.server 8000
+
+```
+
