@@ -69,7 +69,7 @@ GST_DEBUG_CATEGORY_STATIC(gst_seifilter_debug);
 #define GST_CAT_DEFAULT gst_seifilter_debug
 
 /* add by yango */
-static struct timespec old_ts = {0}; 
+static struct timespec old_ts = {0};
 
 /* Filter signals and args */
 enum
@@ -237,6 +237,11 @@ gst_seifilter_sink_event(GstPad *pad, GstObject *parent,
   }
   return ret;
 }
+gboolean parse_userful_info(gchar *inbuf, guint16 inbuf_len, gchar *outbuf,guint16 *outbuf_len){
+
+
+  return TRUE;
+}
 /*
  * GET from HTTP server,
  * Put result in buffer, length in buffer_len
@@ -247,54 +252,45 @@ gboolean read_from_server(gchar *host, guint16 port, gchar *uri, gchar *buffer, 
   GSocketClient *client = g_socket_client_new();
   GSocketConnection *connection = NULL;
   GError *error = NULL;
-  gchar request[256];
+  gchar request[257];
   gchar port_str[12];
-  gchar local_buffer[2048];
-    // gsize buffer_size = 0;
-  gsize rs;
+  gchar local_buffer[2049];
+  gsize rs=0;
+  guint16 index=0;
 
   connection = g_socket_client_connect_to_host(client,
-                                               host, 
-                                               port, 
-                                               NULL, 
+                                               host,
+                                               port,
+                                               NULL,
                                                &error);
-  // g_main_loop_run(loop);
-  //g_print("after connection\n");
 
   if (error == NULL)
   {
     g_print("Connection OK\n");
 
-    // get thre result
-    // GAsyncResult *async_result = G_ASYNC_RESULT(result);
-    // GSocketConnection *connection = g_socket_client_connect_to_host_finish(client,
-    //   async_result, NULL);
     GInputStream *istream = g_io_stream_get_input_stream(G_IO_STREAM(connection));
     GOutputStream *ostream = g_io_stream_get_output_stream(G_IO_STREAM(connection));
 
-    // gchar *request = "GET /one HTTP/1.0\r\nHost: 127.0.0.1:5000\r\n\r\n";
-    g_sprintf(port_str, "%d", port);
-    g_sprintf(request, 
-      "GET /%s HTTP/1.0\r\nHost: %s:%s\r\n\r\n",
-      uri,
-      host,
-      port_str);
-    
+    g_snprintf(port_str, 6, "%d", port);
+    g_snprintf(request, 256,
+               "GET /%s HTTP/1.0\r\nHost: %s:%s\r\n\r\n",
+               uri,
+               host,
+               port_str);
 
-    g_output_stream_write(ostream, 
-      request, 
-      strlen(request), 
-      NULL, 
-      &error);
+    g_output_stream_write(ostream,
+                          request,
+                          strlen(request),
+                          NULL,
+                          &error);
 
-    //g_print("after ostream write\n");
+    // g_print("after ostream write\n");
 
     // read HTTP response,
 
-
     do
     {
-      rs = g_input_stream_read(istream, local_buffer, 1024, NULL, &error);
+      rs = g_input_stream_read(istream, local_buffer + index, 1024, NULL, &error);
 
       if (error != NULL)
       {
@@ -304,24 +300,24 @@ gboolean read_from_server(gchar *host, guint16 port, gchar *uri, gchar *buffer, 
         g_object_unref(client);
         return FALSE;
       }
-      else if(rs > 0)
+      else if (rs > 0)
       {
-        g_print("read OK :: %d\n",rs);
-        for(int i = 0; i < rs; i++){
+        index += rs;
+        // g_print("read OK :: %ld\n", rs);
+        for (int i = 0; i < rs; i++)
+        {
           g_print("%c", local_buffer[i]);
         }
-        // bzero(buffer,1024);
       }
     } while (rs > 0);
     g_print("\n");
-    g_print("after read istream\n");
-
+    g_print("after read istream %d\n", index);
 
     g_io_stream_close(G_IO_STREAM(connection), NULL, &error);
     g_object_unref(istream);
     g_object_unref(client);
 
-    return TRUE;
+    return parse_userful_info(local_buffer, index, buffer, buffer_len);
   }
   else
   {
@@ -330,43 +326,43 @@ gboolean read_from_server(gchar *host, guint16 port, gchar *uri, gchar *buffer, 
 
     return FALSE;
   }
-
 }
 /*
  * default SPS interval is 15ms, too short for http GET request
  * 592149191 - 577500847 = 14.6 ms
-*/
-static gboolean is_in_valid_interval(void){
-  struct timespec ts;  
-  struct timespec temp_ts;
+ */
+static gboolean is_in_valid_interval(void)
+{
+  struct timespec ts;
 
   clock_gettime(CLOCK_REALTIME, &ts);
-
-  // temp_ts.tv_sec = old_ts.tv_sec;
-  // temp_ts.tv_nsec = old_ts.tv_nsec;  
-
-
 
   // g_print("time cur: %d %d\n", ts.tv_sec, ts.tv_nsec);
   // g_print("time old: %d %d\n", temp_ts.tv_sec, temp_ts.tv_nsec);
 
-
-  if(ts.tv_sec - old_ts.tv_sec > 1) {
+  if (ts.tv_sec - old_ts.tv_sec > 1)
+  {
     g_print("Over 1 s\n");
     old_ts.tv_sec = ts.tv_sec;
     old_ts.tv_nsec = ts.tv_nsec;
     return TRUE;
-  }else if (ts.tv_sec - old_ts.tv_sec == 1 && (ts.tv_nsec + NS_IN_S - old_ts.tv_nsec) > MIN_SEI_INTERVAL_TIME_NS) {
-    g_print("2nd, %d, %d\n", ts.tv_sec - old_ts.tv_sec,ts.tv_nsec + NS_IN_S - old_ts.tv_nsec );
+  }
+  else if (ts.tv_sec - old_ts.tv_sec == 1 && (ts.tv_nsec + NS_IN_S - old_ts.tv_nsec) > MIN_SEI_INTERVAL_TIME_NS)
+  {
+    g_print("2nd, %ld, %ld\n", ts.tv_sec - old_ts.tv_sec, ts.tv_nsec + NS_IN_S - old_ts.tv_nsec);
     old_ts.tv_sec = ts.tv_sec;
     old_ts.tv_nsec = ts.tv_nsec;
     return TRUE;
-  }else if (ts.tv_sec == old_ts.tv_sec && (ts.tv_nsec - old_ts.tv_nsec) > MIN_SEI_INTERVAL_TIME_NS){
-    g_print("3rd, %d, %d\n",ts.tv_sec - old_ts.tv_sec , ts.tv_nsec - old_ts.tv_nsec);
+  }
+  else if (ts.tv_sec == old_ts.tv_sec && (ts.tv_nsec - old_ts.tv_nsec) > MIN_SEI_INTERVAL_TIME_NS)
+  {
+    g_print("3rd, %ld, %ld\n", ts.tv_sec - old_ts.tv_sec, ts.tv_nsec - old_ts.tv_nsec);
     old_ts.tv_sec = ts.tv_sec;
     old_ts.tv_nsec = ts.tv_nsec;
     return TRUE;
-  }else{
+  }
+  else
+  {
     // g_print("Not over\n");
     return FALSE;
   }
@@ -384,7 +380,7 @@ gst_seifilter_chain(GstPad *pad, GstObject *parent, GstBuffer *buf)
   guint size;
   gboolean rtn;
   gchar datum[128];
-  gsize datum_len = 0;
+  guint16 datum_len = 0;
 
   filter = GST_SEIFILTER(parent);
 
@@ -400,11 +396,15 @@ gst_seifilter_chain(GstPad *pad, GstObject *parent, GstBuffer *buf)
       is_in_valid_interval())
   {
     g_print("SSP caught\n");
-    rtn = read_from_server("127.0.0.1", 
-      5000, 
-      "one", 
-      datum,
-      &datum_len);
+    rtn = read_from_server("127.0.0.1",
+                           5000,
+                           "one",
+                           datum,
+                           &datum_len);
+    if (rtn == TRUE)
+    {
+      g_print("read from server OK\n");
+    }
   }
 
   // if (filter->silent == FALSE)

@@ -43,7 +43,7 @@ interval,
 
 读取到的服务器侧的信息格式:
 
-```log
+```shell
 SSP caught
 Connection OK
 read OK :: 172
@@ -58,7 +58,12 @@ read OK :: 8
 32:12:12
 after read istream
 
+
+# 解析Content-Length, 获取长度
+# 解析Body, 获取最终的数据,
 ```
+
+
 
 ## python3 
 
