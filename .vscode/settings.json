@@ -1,4 +1,7 @@
 {
     "C_Cpp.default.compileCommands": "builddir/vscode_compile_commands.json",
-    "mesonbuild.configureOnOpen": true
+    "mesonbuild.configureOnOpen": true,
+    "files.associations": {
+        "gio.h": "c"
+    }
 }

@@ -32,14 +32,33 @@ data: 00  00 00 01 41 9E
 
 属性:
 
-```
+```shell
 host,
 port,
 uri,
-
+# min interval of SEI information
+interval,
 
 ```
 
+读取到的服务器侧的信息格式:
+
+```log
+SSP caught
+Connection OK
+read OK :: 172
+HTTP/1.1 200 OK
+Server: Werkzeug/2.3.6 Python/3.10.6
+Date: Wed, 05 Jul 2023 08:14:17 GMT
+Content-Type: text/html; charset=utf-8
+Content-Length: 8
+Connection: close
+
+read OK :: 8
+32:12:12
+after read istream
+
+```
 
 ## python3 
 

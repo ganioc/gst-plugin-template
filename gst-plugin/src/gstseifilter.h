@@ -49,7 +49,14 @@
 
 #include <gst/gst.h>
 
+
+
 G_BEGIN_DECLS
+
+// 100 ms
+#define MIN_SEI_INTERVAL_TIME_NS  (200000000)
+#define NS_IN_S                   (1000000000)
+
 
 #define GST_TYPE_SEIFILTER (gst_seifilter_get_type())
 G_DECLARE_FINAL_TYPE (GstSeiFilter, gst_seifilter,

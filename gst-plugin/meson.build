@@ -12,6 +12,7 @@ configure_file(output : 'config.h', configuration : cdata)
 gstaudio_dep = dependency('gstreamer-audio-1.0',
     fallback: ['gst-plugins-base', 'audio_dep'])
 
+gio_dep = dependency('gio-2.0', fallback: ['glib', 'libgio_dep'])
 # Plugin 1
 #plugin_sources = [
 #  'src/gstplugin.c'
@@ -59,7 +60,7 @@ gstmyfilter = library('gstmyfilter',
 gstseifilter = library('gstseifilter',
   gstseifilter_sources,
   c_args: plugin_c_args,
-  dependencies : [gst_dep, gstbase_dep],
+  dependencies : [gst_dep, gstbase_dep, gio_dep],
   install : true,
   install_dir : plugins_install_dir,
 )
