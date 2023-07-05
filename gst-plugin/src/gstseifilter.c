@@ -238,9 +238,32 @@ gst_seifilter_sink_event(GstPad *pad, GstObject *parent,
   return ret;
 }
 gboolean parse_userful_info(gchar *inbuf, guint16 inbuf_len, gchar *outbuf,guint16 *outbuf_len){
+  guint16 index = 0;
+  gboolean flag = FALSE;
 
+  for(int i = 0; i < inbuf_len; i++){
+    // g_print("%02x ", inbuf[i]);
+    // if(inbuf[i] == '\n'){
+    //   g_print("\n");
+    // }
+    if( i > 4 && inbuf[i] == 0x0a && \
+      inbuf[i-1] == 0x0d && \
+      inbuf[i-2] == 0x0a && \
+      inbuf[i-3] == 0x0d){
+          flag = TRUE;
+          continue;
+    }
+    if(flag == TRUE){
+      outbuf[index++] = inbuf[i];
+    }
+  }
 
-  return TRUE;
+  if( index > 0){
+    *outbuf_len = index;
+    return TRUE;
+  }
+
+  return FALSE;
 }
 /*
  * GET from HTTP server,
@@ -266,7 +289,7 @@ gboolean read_from_server(gchar *host, guint16 port, gchar *uri, gchar *buffer, 
 
   if (error == NULL)
   {
-    g_print("Connection OK\n");
+    // g_print("Connection OK\n");
 
     GInputStream *istream = g_io_stream_get_input_stream(G_IO_STREAM(connection));
     GOutputStream *ostream = g_io_stream_get_output_stream(G_IO_STREAM(connection));
@@ -304,14 +327,14 @@ gboolean read_from_server(gchar *host, guint16 port, gchar *uri, gchar *buffer, 
       {
         index += rs;
         // g_print("read OK :: %ld\n", rs);
-        for (int i = 0; i < rs; i++)
-        {
-          g_print("%c", local_buffer[i]);
-        }
+        // for (int i = 0; i < rs; i++)
+        // {
+        //   g_print("%c", local_buffer[i]);
+        // }
       }
     } while (rs > 0);
-    g_print("\n");
-    g_print("after read istream %d\n", index);
+    // g_print("\n");
+    // g_print("after read istream %d\n", index);
 
     g_io_stream_close(G_IO_STREAM(connection), NULL, &error);
     g_object_unref(istream);
@@ -403,7 +426,12 @@ gst_seifilter_chain(GstPad *pad, GstObject *parent, GstBuffer *buf)
                            &datum_len);
     if (rtn == TRUE)
     {
-      g_print("read from server OK\n");
+      g_print("\nread from server OK %d\n", datum_len);
+      // send out the SEI packet
+      for(int i =0; i< datum_len; i++){
+        g_print("%c", datum[i]);
+      }
+      g_print("\n");
     }
   }
 
