@@ -64,8 +64,8 @@
 
 #include "gstseifilter.h"
 
-GST_DEBUG_CATEGORY_STATIC (gst_sei_filter_debug);
-#define GST_CAT_DEFAULT gst_sei_filter_debug
+GST_DEBUG_CATEGORY_STATIC (gst_seifilter_debug);
+#define GST_CAT_DEFAULT gst_seifilter_debug
 
 /* Filter signals and args */
 enum
@@ -77,9 +77,7 @@ enum
 enum
 {
   PROP_0,
-  PROP_SILENT,
-
-  PROP_LAST
+  PROP_SILENT
 };
 
 /* the capabilities of the inputs and outputs.
@@ -98,27 +96,29 @@ static GstStaticPadTemplate src_factory = GST_STATIC_PAD_TEMPLATE ("src",
     GST_STATIC_CAPS ("ANY")
     );
 
-#define gst_sei_filter_parent_class parent_class
-G_DEFINE_TYPE (GstSeiFilter, gst_sei_filter, GST_TYPE_ELEMENT);
+#define gst_seifilter_parent_class parent_class
+G_DEFINE_TYPE (GstSeiFilter, gst_seifilter, GST_TYPE_ELEMENT);
 
 // GST_ELEMENT_REGISTER_DEFINE (sei_filter, "sei_filter", GST_RANK_NONE,
 //     GST_TYPE_SEI_FILTER);
 
-static void gst_sei_filter_set_property (GObject * object,
+static void gst_seifilter_set_property (GObject * object,
     guint prop_id, const GValue * value, GParamSpec * pspec);
-static void gst_sei_filter_get_property (GObject * object,
+
+static void gst_seifilter_get_property (GObject * object,
     guint prop_id, GValue * value, GParamSpec * pspec);
 
-static gboolean gst_sei_filter_sink_event (GstPad * pad,
+static gboolean gst_seifilter_sink_event (GstPad * pad,
     GstObject * parent, GstEvent * event);
-static GstFlowReturn gst_sei_filter_chain (GstPad * pad,
+
+static GstFlowReturn gst_seifilter_chain (GstPad * pad,
     GstObject * parent, GstBuffer * buf);
 
 /* GObject vmethod implementations */
 
 /* initialize the plugin's class */
 static void
-gst_sei_filter_class_init (GstSeiFilterClass * klass)
+gst_seifilter_class_init (GstSeiFilterClass * klass)
 {
   GObjectClass *gobject_class;
   GstElementClass *gstelement_class;
@@ -126,15 +126,15 @@ gst_sei_filter_class_init (GstSeiFilterClass * klass)
   gobject_class = (GObjectClass *) klass;
   gstelement_class = (GstElementClass *) klass;
 
-  gobject_class->set_property = gst_sei_filter_set_property;
-  gobject_class->get_property = gst_sei_filter_get_property;
+  gobject_class->set_property = gst_seifilter_set_property;
+  gobject_class->get_property = gst_seifilter_get_property;
 
   g_object_class_install_property (gobject_class, PROP_SILENT,
       g_param_spec_boolean ("silent", "Silent", "Produce verbose output ?",
           FALSE, G_PARAM_READWRITE));
 
   gst_element_class_set_details_simple (gstelement_class,
-      "SEIFilter",
+      "seifilter",
       "SEI Filter",
       "SEI Filter Element", "yangjun@nanchao.org");
 
@@ -150,13 +150,13 @@ gst_sei_filter_class_init (GstSeiFilterClass * klass)
  * initialize instance structure
  */
 static void
-gst_sei_filter_init (GstSeiFilter * filter)
+gst_seifilter_init (GstSeiFilter * filter)
 {
   filter->sinkpad = gst_pad_new_from_static_template (&sink_factory, "sink");
   gst_pad_set_event_function (filter->sinkpad,
-      GST_DEBUG_FUNCPTR (gst_sei_filter_sink_event));
+      GST_DEBUG_FUNCPTR (gst_seifilter_sink_event));
   gst_pad_set_chain_function (filter->sinkpad,
-      GST_DEBUG_FUNCPTR (gst_sei_filter_chain));
+      GST_DEBUG_FUNCPTR (gst_seifilter_chain));
   GST_PAD_SET_PROXY_CAPS (filter->sinkpad);
   gst_element_add_pad (GST_ELEMENT (filter), filter->sinkpad);
 
@@ -168,10 +168,10 @@ gst_sei_filter_init (GstSeiFilter * filter)
 }
 
 static void
-gst_sei_filter_set_property (GObject * object, guint prop_id,
+gst_seifilter_set_property (GObject * object, guint prop_id,
     const GValue * value, GParamSpec * pspec)
 {
-  GstSeiFilter *filter = GST_SEI_FILTER (object);
+  GstSeiFilter *filter = GST_SEIFILTER (object);
 
   switch (prop_id) {
     case PROP_SILENT:
@@ -184,10 +184,10 @@ gst_sei_filter_set_property (GObject * object, guint prop_id,
 }
 
 static void
-gst_sei_filter_get_property (GObject * object, guint prop_id,
+gst_seifilter_get_property (GObject * object, guint prop_id,
     GValue * value, GParamSpec * pspec)
 {
-  GstSeiFilter *filter = GST_SEI_FILTER (object);
+  GstSeiFilter *filter = GST_SEIFILTER (object);
 
   switch (prop_id) {
     case PROP_SILENT:
@@ -203,13 +203,13 @@ gst_sei_filter_get_property (GObject * object, guint prop_id,
 
 /* this function handles sink events */
 static gboolean
-gst_sei_filter_sink_event (GstPad * pad, GstObject * parent,
+gst_seifilter_sink_event (GstPad * pad, GstObject * parent,
     GstEvent * event)
 {
   GstSeiFilter *filter;
   gboolean ret;
 
-  filter = GST_SEI_FILTER (parent);
+  filter = GST_SEIFILTER (parent);
 
   GST_LOG_OBJECT (filter, "Received %s event: %" GST_PTR_FORMAT,
       GST_EVENT_TYPE_NAME (event), event);
@@ -237,11 +237,11 @@ gst_sei_filter_sink_event (GstPad * pad, GstObject * parent,
  * this function does the actual processing
  */
 static GstFlowReturn
-gst_sei_filter_chain (GstPad * pad, GstObject * parent, GstBuffer * buf)
+gst_seifilter_chain (GstPad * pad, GstObject * parent, GstBuffer * buf)
 {
   GstSeiFilter *filter;
 
-  filter = GST_SEI_FILTER (parent);
+  filter = GST_SEIFILTER (parent);
 
   if (filter->silent == FALSE)
     g_print ("I'm plugged, therefore I'm in.\n");
@@ -256,19 +256,19 @@ gst_sei_filter_chain (GstPad * pad, GstObject * parent, GstBuffer * buf)
  * register the element factories and other features
  */
 static gboolean
-sei_filter_init (GstPlugin * sei_filter)
+seifilter_init (GstPlugin * seifilter)
 {
   /* debug category for filtering log messages
    *
    * exchange the string 'Template plugin' with your description
    */
-  GST_DEBUG_CATEGORY_INIT (gst_sei_filter_debug, "sei_filter",
+  GST_DEBUG_CATEGORY_INIT (gst_seifilter_debug, "seifilter",
       0, "SEI Filter");
 
   // return GST_ELEMENT_REGISTER (sei_filter, plugin);
-  return gst_element_register(sei_filter, "sei_filter",
+  return gst_element_register(seifilter, "seifilter",
 		    	GST_RANK_NONE,
-			GST_TYPE_SEI_FILTER);
+			GST_TYPE_SEIFILTER);
 }
 
 /* PACKAGE: this is usually set by meson depending on some _INIT macro
@@ -286,7 +286,7 @@ sei_filter_init (GstPlugin * sei_filter)
  */
 GST_PLUGIN_DEFINE (GST_VERSION_MAJOR,
     GST_VERSION_MINOR,
-    sei_filter,
-    "sei_filter",
-    sei_filter_init,
+    seifilter,
+    "seifilter",
+    seifilter_init,
     PACKAGE_VERSION, GST_LICENSE, GST_PACKAGE_NAME, GST_PACKAGE_ORIGIN)

@@ -51,9 +51,9 @@
 
 G_BEGIN_DECLS
 
-#define GST_TYPE_SEI_FILTER (gst_sei_filter_get_type())
-G_DECLARE_FINAL_TYPE (GstSeiFilter, gst_sei_filter,
-    GST, SEI_FILTER, GstElement)
+#define GST_TYPE_SEIFILTER (gst_seifilter_get_type())
+G_DECLARE_FINAL_TYPE (GstSeiFilter, gst_seifilter,
+    GST, SEIFILTER, GstElement)
 
 struct _GstSeiFilter
 {
