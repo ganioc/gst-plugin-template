@@ -30,6 +30,15 @@ data: 00  00 00 01 41 9E
 ## SEIFilter
 对SEI流进行修改,命名为seifilter,
 
+属性:
+
+```
+host,
+port,
+uri,
+
+
+```
 
 
 ## python3 

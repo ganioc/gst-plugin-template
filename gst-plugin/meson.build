@@ -51,6 +51,20 @@ gstmyfilter = library('gstmyfilter',
   install_dir : plugins_install_dir,
 )
 
+
+ gstseifilter_sources = [
+  'src/gstseifilter.c',
+  ]
+
+gstseifilter = library('gstseifilter',
+  gstseifilter_sources,
+  c_args: plugin_c_args,
+  dependencies : [gst_dep, gstbase_dep],
+  install : true,
+  install_dir : plugins_install_dir,
+)
+
+
 # The Custom Plugin
 #  gstcustplugin_sources = [
 #   'src/gstcustplugin.c',
