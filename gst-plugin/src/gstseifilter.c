@@ -240,11 +240,28 @@ static GstFlowReturn
 gst_seifilter_chain (GstPad * pad, GstObject * parent, GstBuffer * buf)
 {
   GstSeiFilter *filter;
+  GstMapInfo info;
+  guint8 *data;
+  guint size;
 
   filter = GST_SEIFILTER (parent);
 
-  if (filter->silent == FALSE)
-    g_print ("I'm plugged, therefore I'm in.\n");
+  gst_buffer_map(buf, &info, GST_MAP_READ);
+  data = info.data;
+  size = info.size;
+
+  if (size >= 5 &&
+        data[0] == 0x00 &&
+        data[1] == 0x00 &&
+        data[2] == 0x00 &&
+        data[3] == 0x01){
+    g_print("SSP caught\n");
+
+
+  }
+
+  // if (filter->silent == FALSE)
+  //   g_print ("I'm plugged, therefore I'm in.\n");
 
   /* just push out the incoming buffer without touching it */
   return gst_pad_push (filter->srcpad, buf);
