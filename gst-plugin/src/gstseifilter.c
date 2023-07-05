@@ -71,6 +71,15 @@ GST_DEBUG_CATEGORY_STATIC(gst_seifilter_debug);
 /* add by yango */
 static struct timespec old_ts = {0};
 
+static gboolean JustCaughtDelimiter = FALSE;
+// 086f3693-b7b3-4f2c-9653-21492feee5b8
+static guint8 uuid[MYFILTER_SEI_UUID_SIZE] = {
+    0x08, 0x6f, 0x36, 0x93,
+    0xb7, 0xb3,
+    0x4f, 0x2c,
+    0x96, 0x53,
+    0x21, 0x49, 0x2f, 0xee, 0xe5, 0xb8};
+
 /* Filter signals and args */
 enum
 {
@@ -237,28 +246,33 @@ gst_seifilter_sink_event(GstPad *pad, GstObject *parent,
   }
   return ret;
 }
-gboolean parse_userful_info(gchar *inbuf, guint16 inbuf_len, gchar *outbuf,guint16 *outbuf_len){
+gboolean parse_userful_info(gchar *inbuf, guint16 inbuf_len, gchar *outbuf, guint16 *outbuf_len)
+{
   guint16 index = 0;
   gboolean flag = FALSE;
 
-  for(int i = 0; i < inbuf_len; i++){
+  for (int i = 0; i < inbuf_len; i++)
+  {
     // g_print("%02x ", inbuf[i]);
     // if(inbuf[i] == '\n'){
     //   g_print("\n");
     // }
-    if( i > 4 && inbuf[i] == 0x0a && \
-      inbuf[i-1] == 0x0d && \
-      inbuf[i-2] == 0x0a && \
-      inbuf[i-3] == 0x0d){
-          flag = TRUE;
-          continue;
+    if (i > 4 && inbuf[i] == 0x0a &&
+        inbuf[i - 1] == 0x0d &&
+        inbuf[i - 2] == 0x0a &&
+        inbuf[i - 3] == 0x0d)
+    {
+      flag = TRUE;
+      continue;
     }
-    if(flag == TRUE){
+    if (flag == TRUE)
+    {
       outbuf[index++] = inbuf[i];
     }
   }
 
-  if( index > 0){
+  if (index > 0)
+  {
     *outbuf_len = index;
     return TRUE;
   }
@@ -278,8 +292,8 @@ gboolean read_from_server(gchar *host, guint16 port, gchar *uri, gchar *buffer, 
   gchar request[257];
   gchar port_str[12];
   gchar local_buffer[2049];
-  gsize rs=0;
-  guint16 index=0;
+  gsize rs = 0;
+  guint16 index = 0;
 
   connection = g_socket_client_connect_to_host(client,
                                                host,
@@ -405,6 +419,7 @@ gst_seifilter_chain(GstPad *pad, GstObject *parent, GstBuffer *buf)
   gchar datum[128];
   guint16 datum_len = 0;
 
+  // You can get filter properties here from filter
   filter = GST_SEIFILTER(parent);
 
   gst_buffer_map(buf, &info, GST_MAP_READ);
@@ -415,23 +430,73 @@ gst_seifilter_chain(GstPad *pad, GstObject *parent, GstBuffer *buf)
       data[0] == 0x00 &&
       data[1] == 0x00 &&
       data[2] == 0x00 &&
-      data[3] == 0x01 &&
-      is_in_valid_interval())
+      data[3] == 0x01
+      // data[4] == MYFILTER_NALU_SPS &&
+      // is_in_valid_interval()
+  )
   {
-    g_print("SSP caught\n");
-    rtn = read_from_server("127.0.0.1",
-                           5000,
-                           "one",
-                           datum,
-                           &datum_len);
-    if (rtn == TRUE)
+    if (JustCaughtDelimiter == TRUE &&
+        data[4] == MYFILTER_NALU_SPS &&
+        is_in_valid_interval())
     {
-      g_print("\nread from server OK %d\n", datum_len);
-      // send out the SEI packet
-      for(int i =0; i< datum_len; i++){
-        g_print("%c", datum[i]);
+      g_print("SSP caught\n");
+      rtn = read_from_server("127.0.0.1",
+                             5000,
+                             "one",
+                             datum,
+                             &datum_len);
+      if (rtn == TRUE)
+      {
+        g_print("\nread from server OK %d\n", datum_len);
+        // send out the SEI packet
+        for (int i = 0; i < datum_len; i++)
+        {
+          g_print("%c", datum[i]);
+        }
+        g_print("\n");
+
+        guint16 sei_index = 0, sei_data_size = datum_len;
+        guint16 gbuffer_size = 4 + 3 + 16 + sei_data_size + 1;
+        GstBuffer *sei_buf = gst_buffer_new_and_alloc(gbuffer_size);
+        GstMapInfo map;
+
+        gst_buffer_map(sei_buf, &map, GST_MAP_WRITE);
+        map.data[0] = 0x00;
+        map.data[1] = 0x00;
+        map.data[2] = 0x00;
+        map.data[3] = 0x01;
+        map.data[4] = MYFILTER_SEI_NALU_TYPE;    // NAL unit type for SEI message
+        map.data[5] = MYFILTER_SEI_PAYLOAD_TYPE; // SEI message payload type
+        map.data[6] = 16 + sei_data_size;        // SEI message payload size
+        sei_index = 7;
+        // Copy uuid,
+        for (int i = 0; i < MYFILTER_SEI_UUID_SIZE; i++)
+        {
+          map.data[sei_index++] = uuid[i];
+        }
+        // Copy data;
+        for (int i = 0; i < sei_data_size; i++)
+        {
+          map.data[sei_index++] = datum[i];
+          // Sg_print("%02x ", datum[i]);
+        }
+        // End byte is 0x80;
+        map.data[gbuffer_size - 1] = MYFILTER_SEI_TRAILING_BYTE;
+
+        // Unmap the buffer
+        gst_buffer_unmap(sei_buf, &map);
+
+        // Push the SEI message downstream
+        gst_pad_push(filter->srcpad, sei_buf);
       }
-      g_print("\n");
+    }
+    else if (data[4] == MYFILTER_NALU_DELIMIT)
+    {
+      JustCaughtDelimiter = TRUE;
+    }
+    else
+    {
+      JustCaughtDelimiter = FALSE;
     }
   }
 
