@@ -54,7 +54,7 @@
 G_BEGIN_DECLS
 
 // 100 ms
-#define MIN_SEI_INTERVAL_TIME_NS  (200000000)
+#define MIN_SEI_INTERVAL_TIME_NS  (500000000)
 #define NS_IN_S                   (1000000000)
 
 

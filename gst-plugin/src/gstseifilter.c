@@ -342,8 +342,8 @@ static gboolean is_in_valid_interval(void){
 
   clock_gettime(CLOCK_REALTIME, &ts);
 
-  temp_ts.tv_sec = old_ts.tv_sec;
-  temp_ts.tv_nsec = old_ts.tv_nsec;  
+  // temp_ts.tv_sec = old_ts.tv_sec;
+  // temp_ts.tv_nsec = old_ts.tv_nsec;  
 
 
 
@@ -351,18 +351,18 @@ static gboolean is_in_valid_interval(void){
   // g_print("time old: %d %d\n", temp_ts.tv_sec, temp_ts.tv_nsec);
 
 
-  if(ts.tv_sec - temp_ts.tv_sec > 1) {
+  if(ts.tv_sec - old_ts.tv_sec > 1) {
     g_print("Over 1 s\n");
     old_ts.tv_sec = ts.tv_sec;
     old_ts.tv_nsec = ts.tv_nsec;
     return TRUE;
-  }else if (ts.tv_sec - temp_ts.tv_sec == 1 && (ts.tv_nsec + NS_IN_S - temp_ts.tv_nsec) > MIN_SEI_INTERVAL_TIME_NS) {
-    g_print("2nd, %d, %d\n", ts.tv_sec - temp_ts.tv_sec,ts.tv_nsec + NS_IN_S - temp_ts.tv_nsec );
+  }else if (ts.tv_sec - old_ts.tv_sec == 1 && (ts.tv_nsec + NS_IN_S - old_ts.tv_nsec) > MIN_SEI_INTERVAL_TIME_NS) {
+    g_print("2nd, %d, %d\n", ts.tv_sec - old_ts.tv_sec,ts.tv_nsec + NS_IN_S - old_ts.tv_nsec );
     old_ts.tv_sec = ts.tv_sec;
     old_ts.tv_nsec = ts.tv_nsec;
     return TRUE;
-  }else if (ts.tv_sec == temp_ts.tv_sec && (ts.tv_nsec - temp_ts.tv_nsec) > MIN_SEI_INTERVAL_TIME_NS){
-    g_print("3rd, %d, %d\n",ts.tv_sec - temp_ts.tv_sec , ts.tv_nsec - temp_ts.tv_nsec);
+  }else if (ts.tv_sec == old_ts.tv_sec && (ts.tv_nsec - old_ts.tv_nsec) > MIN_SEI_INTERVAL_TIME_NS){
+    g_print("3rd, %d, %d\n",ts.tv_sec - old_ts.tv_sec , ts.tv_nsec - old_ts.tv_nsec);
     old_ts.tv_sec = ts.tv_sec;
     old_ts.tv_nsec = ts.tv_nsec;
     return TRUE;
