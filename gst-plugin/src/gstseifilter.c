@@ -136,7 +136,19 @@ static GstFlowReturn gst_seifilter_chain(GstPad *pad,
                                          GstObject *parent, GstBuffer *buf);
 
 /* GObject vmethod implementations */
-
+static void
+gst_seifilter_finalize(GObject *object){
+  GstSeiFilter *filter = GST_SEIFILTER(object);
+  
+  if(filter->host){
+    g_print("free host pointer\n");
+    g_free(filter->host);
+  }
+  if(filter->uri){
+    g_print("free uri pointer\n");
+    g_free(filter->uri);
+  }
+}
 /* initialize the plugin's class */
 static void
 gst_seifilter_class_init(GstSeiFilterClass *klass)
@@ -149,6 +161,7 @@ gst_seifilter_class_init(GstSeiFilterClass *klass)
 
   gobject_class->set_property = gst_seifilter_set_property;
   gobject_class->get_property = gst_seifilter_get_property;
+  gobject_class->finalize = gst_seifilter_finalize;
 
   g_object_class_install_property(gobject_class, 
     PROP_SILENT,
@@ -191,16 +204,18 @@ gst_seifilter_class_init(GstSeiFilterClass *klass)
       99999,
       3000,
       G_PARAM_READWRITE));
-/*  
+  
   g_object_class_install_property(gobject_class,
     PROP_URI,
-    g_param_spec_pointer(
+    g_param_spec_string(
       "uri",
       "uri string",
       "uri uint8 array",
-      G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS
+      NULL,
+      G_PARAM_READWRITE
     )
   );
+/*
   g_object_class_install_property(gobject_class,
     PROP_URI_LEN,
     g_param_spec_uint(
@@ -257,7 +272,8 @@ gst_seifilter_init(GstSeiFilter *filter)
   filter->silent = FALSE;
   filter->host = NULL;
   filter->host_len = 0;
-  filter->port=0;
+  filter->port = 5000;
+  filter->uri = NULL;
   filter->uri_len = 0;
 }
 
@@ -287,11 +303,12 @@ gst_seifilter_set_property(GObject *object, guint prop_id,
   case PROP_PORT:
     filter->port = g_value_get_uint(value);
     break;
-/*
+
   case PROP_URI:
-    // g_free(filter->uri);
+    g_free(filter->uri);
     filter->uri = g_value_dup_string(value);
     break;
+/*
   case PROP_URI_LEN:
     filter->uri_len = g_value_get_int(value);
     break;
@@ -301,11 +318,7 @@ gst_seifilter_set_property(GObject *object, guint prop_id,
     break;
   }
 }
-// static void
-// gst_seifilter_finalize(GObject *object){
-//   GstSeiFilter *filter = GST_SEIFILTER(object);
 
-// }
 static void
 gst_seifilter_get_property(GObject *object, guint prop_id,
                            GValue *value, GParamSpec *pspec)
@@ -326,10 +339,10 @@ gst_seifilter_get_property(GObject *object, guint prop_id,
   case PROP_PORT:
     g_value_set_int(value, filter->port);
     break;
-/*
   case PROP_URI:
     g_value_set_string(value, filter->uri);
     break;
+/*
   case PROP_URI_LEN:
     g_value_set_int(value, filter->uri_len);
     break;
@@ -534,22 +547,29 @@ static gboolean is_in_valid_interval(void)
 }
 */
 void check_properties(GstSeiFilter *filter){
-  if(filter->silent){
-    g_print("silent: %d\n", filter->silent);
-  }
+  // if(filter->silent){
+  //   g_print("silent: %d\n", filter->silent);
+  // }
 
   if(!filter->port){
     g_error("port not set\n");
-  }else{
-    g_print("port: %d\n", filter->port);
   }
+  // else{
+  //   g_print("port: %d\n", filter->port);
+  // }
 
   if(!filter->host){
     g_error("host not set\n");
-  }else{
-    g_print("host: %s\n", filter->host);
   }
-
+  // else{
+  //   g_print("host: %s\n", filter->host);
+  // }
+  if(!filter->uri){
+    g_error("uri not set\n");
+  }
+  // else{
+  //   g_print("uri: %s\n", filter->uri);
+  // }
 
 }
 /* chain function
@@ -588,12 +608,11 @@ gst_seifilter_chain(GstPad *pad, GstObject *parent, GstBuffer *buf)
         )
     {
       check_properties(filter);
-
       
       // g_print("SSP caught\n");
       rtn = read_from_server(filter->host,
                              filter->port,
-                             "one",
+                             filter->uri,
                              datum,
                              &datum_len);
       if (rtn == TRUE)
