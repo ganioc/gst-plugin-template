@@ -100,7 +100,7 @@ enum
   PROP_LAST
 };
 
-static GParamSpec *seifliter_properties[PROP_LAST];
+// static GParamSpec *seifliter_properties[PROP_LAST];
 
 /* the capabilities of the inputs and outputs.
  *
@@ -169,7 +169,7 @@ gst_seifilter_class_init(GstSeiFilterClass *klass)
       G_PARAM_READWRITE
     )
   );
-/*
+
   g_object_class_install_property(gobject_class,
     PROP_HOST_LEN,
     g_param_spec_uint(
@@ -187,11 +187,11 @@ gst_seifilter_class_init(GstSeiFilterClass *klass)
       "port",
       "port number",
       "port number uint16",
-      0,
+      1000,
       99999,
-      0,
-      G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
-  
+      3000,
+      G_PARAM_READWRITE));
+/*  
   g_object_class_install_property(gobject_class,
     PROP_URI,
     g_param_spec_pointer(
@@ -257,6 +257,7 @@ gst_seifilter_init(GstSeiFilter *filter)
   filter->silent = FALSE;
   filter->host = NULL;
   filter->host_len = 0;
+  filter->port=0;
   filter->uri_len = 0;
 }
 
@@ -279,15 +280,14 @@ gst_seifilter_set_property(GObject *object, guint prop_id,
       filter->host = g_value_dup_string(value);
       g_print("set host to %s\n", filter->host);
     }
-
     break;
-/*
   case PROP_HOST_LEN:
-    filter->host_len = g_value_get_int(value);
+    filter->host_len = g_value_get_uint(value);
     break;
   case PROP_PORT:
-    filter->port = g_value_get_int(value);
+    filter->port = g_value_get_uint(value);
     break;
+/*
   case PROP_URI:
     // g_free(filter->uri);
     filter->uri = g_value_dup_string(value);
@@ -320,13 +320,13 @@ gst_seifilter_get_property(GObject *object, guint prop_id,
   case PROP_HOST:
     g_value_set_string(value, filter->host);
     break;
-/*
   case PROP_HOST_LEN:
     g_value_set_int(value, filter->host_len);
     break;
   case PROP_PORT:
     g_value_set_int(value, filter->port);
     break;
+/*
   case PROP_URI:
     g_value_set_string(value, filter->uri);
     break;
@@ -450,7 +450,6 @@ gboolean read_from_server(gchar *host, guint16 port, gchar *uri, gchar *buffer, 
                           &error);
 
     // g_print("after ostream write\n");
-
     // read HTTP response,
 
     do
@@ -538,11 +537,19 @@ void check_properties(GstSeiFilter *filter){
   if(filter->silent){
     g_print("silent: %d\n", filter->silent);
   }
+
+  if(!filter->port){
+    g_error("port not set\n");
+  }else{
+    g_print("port: %d\n", filter->port);
+  }
+
   if(!filter->host){
     g_error("host not set\n");
   }else{
     g_print("host: %s\n", filter->host);
   }
+
 
 }
 /* chain function
@@ -585,7 +592,7 @@ gst_seifilter_chain(GstPad *pad, GstObject *parent, GstBuffer *buf)
       
       // g_print("SSP caught\n");
       rtn = read_from_server(filter->host,
-                             5000,
+                             filter->port,
                              "one",
                              datum,
                              &datum_len);
