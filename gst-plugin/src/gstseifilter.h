@@ -48,6 +48,7 @@
 #define __GST_SEI_FILTER_H__
 
 #include <gst/gst.h>
+#include <gio/gio.h>
 
 G_BEGIN_DECLS
 
@@ -84,6 +85,11 @@ struct _GstSeiFilter
   guint16 port;
   gchar *uri;
   guint16 interval;
+
+  GSocketClient *client;
+  GSocketConnection *connection;
+  GInputStream *istream;
+  GOutputStream *ostream;
 };
 
 G_END_DECLS

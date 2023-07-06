@@ -149,9 +149,72 @@ gst_seifilter_finalize(GObject *object){
     g_free(filter->uri);
   }
 }
+gboolean setup_connection(GstSeiFilter *filter){
+  GError *error = NULL;
+  filter->client = g_socket_client_new();
 
+  filter->connection = g_socket_client_connect_to_host(
+      filter->client,
+      filter->host,
+      filter->port,
+      NULL,
+      &error);
+  
+  if(error == NULL){
+    // filter->istream = g_io_stream_get_input_stream(G_IO_STREAM(filter->connection));
+    // filter->ostream = g_io_stream_get_output_stream(G_IO_STREAM(filter->connection));
+
+    return TRUE;
+  }
+  g_object_unref(filter->client);
+  return FALSE;
+}
+gboolean clear_connection(GstSeiFilter *filter){
+  GError *error = NULL;
+  g_io_stream_close(G_IO_STREAM(filter->connection), NULL, &error);
+  g_object_unref(filter->istream);
+  g_object_unref(filter->client);
+  return TRUE;
+}
 static GstStateChangeReturn
 gst_seifilter_change_state(GstElement *element, GstStateChange transition){
+
+  // GstStateChangeReturn ret = GST_STATE_CHANGE_SUCCESS;
+  GstSeiFilter *filter = GST_SEIFILTER (element);
+
+  switch (transition) {
+    case GST_STATE_CHANGE_NULL_TO_READY:
+      g_print("<-- Null to ready\n");
+      break;
+    case GST_STATE_CHANGE_READY_TO_PAUSED:
+      g_print("<-- Ready to paused\n");
+      g_print("host is %s\n", filter->host);
+      g_print("port is %d\n", filter->port);
+      g_print("uri is %s\n", filter->uri);
+      g_print("setup tcp connection:\n");
+      if(!setup_connection(filter)){
+        g_error("setup tcp failed\n");
+      }
+      break;
+    case GST_STATE_CHANGE_PAUSED_TO_PLAYING:
+      g_print("<-- Paused to playing\n");
+      break;
+    case GST_STATE_CHANGE_PLAYING_TO_PAUSED:
+      g_print("<-- Playing to paused\n");
+      if(!clear_connection(filter)){
+        g_error("clear tcp failed\n");
+      }
+      break;
+    case GST_STATE_CHANGE_PAUSED_TO_READY:
+      g_print("<-- Paused to ready\n");
+      break;
+    case GST_STATE_CHANGE_READY_TO_NULL:
+      g_print("<-- Ready to null\n");
+      break;
+    default:
+      break;
+   }
+
   return GST_ELEMENT_CLASS(parent_class)->change_state(element,transition);
 }
 
@@ -289,6 +352,11 @@ gst_seifilter_init(GstSeiFilter *filter)
   filter->host = NULL;
   filter->port = 4000;
   filter->uri = NULL;
+
+  filter->client = NULL;
+  filter->connection = NULL;
+  filter->istream = NULL;
+  filter->ostream = NULL;
 }
 
 static void
@@ -551,6 +619,63 @@ void check_properties(GstSeiFilter *filter){
   }
 
 }
+gboolean fetch_sei_from_server(GstSeiFilter *filter,gchar *buffer, guint16 *buffer_len){
+  GError *error = NULL;
+  gchar request[257];
+  gchar port_str[12];
+  gchar local_buffer[2049];
+  gsize rs = 0;
+  guint16 index = 0;
+  GInputStream *istream;
+  GOutputStream *ostream;
+
+  filter->istream = g_io_stream_get_input_stream(G_IO_STREAM(filter->connection));
+  filter->ostream = g_io_stream_get_output_stream(G_IO_STREAM(filter->connection));
+
+  g_snprintf(port_str, 6, "%d", filter->port);
+  g_snprintf(request, 256,
+               "GET /%s HTTP/1.0\r\nHost: %s:%s\r\n\r\n",
+               filter->uri,
+               filter->host,
+               port_str);
+
+  g_output_stream_write(filter->ostream,
+                        request,
+                        strlen(request),
+                        NULL,
+                        &error);
+  do
+  {
+    rs = g_input_stream_read(filter->istream, local_buffer + index, 1024, NULL, &error);
+
+    if (error != NULL)
+    {
+      g_print("read error\n");
+      // g_io_stream_close(G_IO_STREAM(connection), NULL, &error);
+      g_object_unref(filter->istream);
+      g_object_unref(filter->ostream);
+      // g_object_unref(client);
+      return FALSE;
+    }
+    else if (rs > 0)
+    {
+      index += rs;
+        // g_print("read OK :: %ld\n", rs);
+        // for (int i = 0; i < rs; i++)
+        // {
+        //   g_print("%c", local_buffer[i]);
+        // }
+    }
+  } while (rs > 0);
+
+  g_object_unref(filter->istream);
+  g_object_unref(filter->ostream);
+
+  return parse_userful_info(local_buffer, index, buffer, buffer_len);
+}
+static void send_sei_packet(){
+
+}
 /* chain function
  * this function does the actual processing
  */
@@ -600,7 +725,7 @@ gst_seifilter_chain(GstPad *pad, GstObject *parent, GstBuffer *buf)
                              filter->uri,
                              datum,
                              &datum_len);
-
+      // rtn = fetch_sei_from_server(filter, datum, &datum_len);
 
       if (rtn == TRUE)
       {
