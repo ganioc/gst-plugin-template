@@ -182,7 +182,7 @@ gst_seifilter_class_init(GstSeiFilterClass *klass)
       G_PARAM_READWRITE
     )
   );
-/*
+ /*
   g_object_class_install_property(gobject_class,
     PROP_HOST_LEN,
     g_param_spec_uint(
@@ -193,7 +193,7 @@ gst_seifilter_class_init(GstSeiFilterClass *klass)
       SEIFILTER_HOST_LEN,
       0,
       G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
-
+ 
   g_object_class_install_property(gobject_class,
     PROP_PORT,
     g_param_spec_uint(
@@ -204,7 +204,7 @@ gst_seifilter_class_init(GstSeiFilterClass *klass)
       99999,
       3000,
       G_PARAM_READWRITE));
-  
+
   g_object_class_install_property(gobject_class,
     PROP_URI,
     g_param_spec_string(
@@ -603,6 +603,7 @@ gst_seifilter_chain(GstPad *pad, GstObject *parent, GstBuffer *buf)
         // is_in_valid_interval()
         )
     {
+      g_print("host: %s\n", filter->host);
       // check_properties(filter);
       
       // g_print("SSP caught\n");
@@ -611,8 +612,8 @@ gst_seifilter_chain(GstPad *pad, GstObject *parent, GstBuffer *buf)
       //                        filter->uri,
       //                        datum,
       //                        &datum_len);
-      rtn = read_from_server("192.168.0.99",
-                             5000,
+      rtn = read_from_server(filter->host,
+                             filter->port,
                              "one",
                              datum,
                              &datum_len);
