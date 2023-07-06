@@ -92,10 +92,8 @@ enum
   PROP_0,
   PROP_SILENT,
   PROP_HOST,
-  PROP_HOST_LEN,
   PROP_PORT,
   PROP_URI,
-  PROP_URI_LEN,
   PROP_INTERVAL,
   PROP_LAST
 };
@@ -231,7 +229,7 @@ gst_seifilter_class_init(GstSeiFilterClass *klass)
       SEIFILTER_URI_LEN,
       0,
       G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
-
+*/
   g_object_class_install_property(gobject_class,
     PROP_INTERVAL,
     g_param_spec_uint(
@@ -240,9 +238,9 @@ gst_seifilter_class_init(GstSeiFilterClass *klass)
       "SEI sending interval uint16, in ms",
       100,
       5000,
-      0,
+      100,
       G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
-*/
+
   gst_element_class_set_details_simple(gstelement_class,
                                        "seifilter",
                                        "SEI Filter",
@@ -276,10 +274,8 @@ gst_seifilter_init(GstSeiFilter *filter)
 
   filter->silent = FALSE;
   filter->host = NULL;
-  filter->host_len = 0;
   filter->port = 4000;
   filter->uri = NULL;
-  filter->uri_len = 0;
 }
 
 static void
@@ -298,22 +294,13 @@ gst_seifilter_set_property(GObject *object, guint prop_id,
     filter->host = g_value_dup_string(value);
     g_print("set host to %s\n", filter->host);
     break;
-  case PROP_HOST_LEN:
-    filter->host_len = g_value_get_uint(value);
-    break;
   case PROP_PORT:
     filter->port = g_value_get_uint(value);
     break;
-
   case PROP_URI:
     g_free(filter->uri);
     filter->uri = g_value_dup_string(value);
     break;
-/*
-  case PROP_URI_LEN:
-    filter->uri_len = g_value_get_int(value);
-    break;
-*/
   default:
     G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
     break;
@@ -334,20 +321,12 @@ gst_seifilter_get_property(GObject *object, guint prop_id,
   case PROP_HOST:
     g_value_set_string(value, filter->host);
     break;
-  case PROP_HOST_LEN:
-    g_value_set_int(value, filter->host_len);
-    break;
   case PROP_PORT:
     g_value_set_int(value, filter->port);
     break;
   case PROP_URI:
     g_value_set_string(value, filter->uri);
     break;
-/*
-  case PROP_URI_LEN:
-    g_value_set_int(value, filter->uri_len);
-    break;
-*/
   default:
     G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
     break;
@@ -552,25 +531,9 @@ void check_properties(GstSeiFilter *filter){
   //   g_print("silent: %d\n", filter->silent);
   // }
 
-  if(!filter->port){
-    g_error("port not set\n");
+  if(!filter->port || !filter->host || !filter->uri){
+    g_error("port,host,uri not set\n");
   }
-  // else{
-  //   g_print("port: %d\n", filter->port);
-  // }
-
-  if(!filter->host){
-    g_error("host not set\n");
-  }
-  // else{
-  //   g_print("host: %s\n", filter->host);
-  // }
-  if(!filter->uri){
-    g_error("uri not set\n");
-  }
-  // else{
-  //   g_print("uri: %s\n", filter->uri);
-  // }
 
 }
 /* chain function
@@ -609,7 +572,7 @@ gst_seifilter_chain(GstPad *pad, GstObject *parent, GstBuffer *buf)
         )
     {
       // g_print("host: %s\n", filter->host);
-      // check_properties(filter);
+      check_properties(filter);
       
       // g_print("SSP caught\n");
       // rtn = read_from_server(filter->host,

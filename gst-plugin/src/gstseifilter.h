@@ -81,10 +81,8 @@ struct _GstSeiFilter
 
   gboolean silent;
   gchar *host;
-  guint16 host_len;
   guint16 port;
   gchar *uri;
-  guint16 uri_len;
   guint16 interval;
 };
 
