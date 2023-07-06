@@ -171,7 +171,7 @@ gst_seifilter_class_init(GstSeiFilterClass *klass)
       "Produce verbose output ?",
       FALSE, 
       G_PARAM_READWRITE));
-/*
+
   g_object_class_install_property(gobject_class,
     PROP_HOST,
     g_param_spec_string(
@@ -182,7 +182,7 @@ gst_seifilter_class_init(GstSeiFilterClass *klass)
       G_PARAM_READWRITE
     )
   );
-
+/*
   g_object_class_install_property(gobject_class,
     PROP_HOST_LEN,
     g_param_spec_uint(
@@ -290,12 +290,8 @@ gst_seifilter_set_property(GObject *object, guint prop_id,
     break;
   case PROP_HOST:
     g_free(filter->host);
-    if(!value){
-      g_error("host is empty\n");
-    }else{
-      filter->host = g_value_dup_string(value);
-      g_print("set host to %s\n", filter->host);
-    }
+    filter->host = g_value_dup_string(value);
+    g_print("set host to %s\n", filter->host);
     break;
   case PROP_HOST_LEN:
     filter->host_len = g_value_get_uint(value);
