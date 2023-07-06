@@ -194,6 +194,17 @@ gst_seifilter_class_init(GstSeiFilterClass *klass)
       3000,
       G_PARAM_READWRITE));
 
+
+  g_object_class_install_property(gobject_class,
+    PROP_URI,
+    g_param_spec_string(
+      "uri",
+      "uri string",
+      "uri uint8 array",
+      NULL,
+      G_PARAM_READWRITE
+    )
+  );
  /*
   g_object_class_install_property(gobject_class,
     PROP_HOST_LEN,
@@ -208,16 +219,7 @@ gst_seifilter_class_init(GstSeiFilterClass *klass)
  
 
 
-  g_object_class_install_property(gobject_class,
-    PROP_URI,
-    g_param_spec_string(
-      "uri",
-      "uri string",
-      "uri uint8 array",
-      NULL,
-      G_PARAM_READWRITE
-    )
-  );
+
 
   g_object_class_install_property(gobject_class,
     PROP_URI_LEN,
@@ -275,7 +277,7 @@ gst_seifilter_init(GstSeiFilter *filter)
   filter->silent = FALSE;
   filter->host = NULL;
   filter->host_len = 0;
-  filter->port = 5000;
+  filter->port = 4000;
   filter->uri = NULL;
   filter->uri_len = 0;
 }
@@ -606,7 +608,7 @@ gst_seifilter_chain(GstPad *pad, GstObject *parent, GstBuffer *buf)
         // is_in_valid_interval()
         )
     {
-      g_print("host: %s\n", filter->host);
+      // g_print("host: %s\n", filter->host);
       // check_properties(filter);
       
       // g_print("SSP caught\n");
@@ -617,7 +619,7 @@ gst_seifilter_chain(GstPad *pad, GstObject *parent, GstBuffer *buf)
       //                        &datum_len);
       rtn = read_from_server(filter->host,
                              filter->port,
-                             "one",
+                             filter->uri,
                              datum,
                              &datum_len);
 
@@ -665,6 +667,8 @@ gst_seifilter_chain(GstPad *pad, GstObject *parent, GstBuffer *buf)
 
         // Push the SEI message downstream
         gst_pad_push(filter->srcpad, sei_buf);
+      }else{
+        g_print("read server failed\n");
       }
     }
     else if (data[4] == SEIFILTER_NALU_DELIMIT)
@@ -679,7 +683,7 @@ gst_seifilter_chain(GstPad *pad, GstObject *parent, GstBuffer *buf)
 
   // if (filter->silent == FALSE)
   //   g_print ("I'm plugged, therefore I'm in.\n");
-
+  gst_buffer_unmap(buf, &info);
   /* just push out the incoming buffer without touching it */
   return gst_pad_push(filter->srcpad, buf);
 }
