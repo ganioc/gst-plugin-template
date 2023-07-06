@@ -136,6 +136,8 @@ static GstFlowReturn gst_seifilter_chain(GstPad *pad,
 /* GObject vmethod implementations */
 static void
 gst_seifilter_finalize(GObject *object){
+  g_print("<-- in finalize()\n");
+
   GstSeiFilter *filter = GST_SEIFILTER(object);
   
   if(filter->host){
@@ -151,6 +153,8 @@ gst_seifilter_finalize(GObject *object){
 static void
 gst_seifilter_class_init(GstSeiFilterClass *klass)
 {
+  g_print("<-- in class_init()\n");
+
   GObjectClass *gobject_class;
   GstElementClass *gstelement_class;
 
@@ -260,6 +264,7 @@ gst_seifilter_class_init(GstSeiFilterClass *klass)
 static void
 gst_seifilter_init(GstSeiFilter *filter)
 {
+  g_print("<-- in init()\n");
   filter->sinkpad = gst_pad_new_from_static_template(&sink_factory, "sink");
   gst_pad_set_event_function(filter->sinkpad,
                              GST_DEBUG_FUNCPTR(gst_seifilter_sink_event));
@@ -282,6 +287,7 @@ static void
 gst_seifilter_set_property(GObject *object, guint prop_id,
                            const GValue *value, GParamSpec *pspec)
 {
+  g_print("<-- in set prop\n");
   GstSeiFilter *filter = GST_SEIFILTER(object);
 
   switch (prop_id)
@@ -292,7 +298,7 @@ gst_seifilter_set_property(GObject *object, guint prop_id,
   case PROP_HOST:
     g_free(filter->host);
     filter->host = g_value_dup_string(value);
-    g_print("set host to %s\n", filter->host);
+    // g_print("set host to %s\n", filter->host);
     break;
   case PROP_PORT:
     filter->port = g_value_get_uint(value);
@@ -311,6 +317,7 @@ static void
 gst_seifilter_get_property(GObject *object, guint prop_id,
                            GValue *value, GParamSpec *pspec)
 {
+  g_print("<-- in get prop\n");
   GstSeiFilter *filter = GST_SEIFILTER(object);
 
   switch (prop_id)
@@ -658,6 +665,7 @@ gst_seifilter_chain(GstPad *pad, GstObject *parent, GstBuffer *buf)
 static gboolean
 seifilter_init(GstPlugin *seifilter)
 {
+  g_print("<-- in entry point to init\n");
   /* debug category for filtering log messages
    *
    * exchange the string 'Template plugin' with your description
