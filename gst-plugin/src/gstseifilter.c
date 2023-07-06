@@ -436,10 +436,11 @@ gst_seifilter_chain(GstPad *pad, GstObject *parent, GstBuffer *buf)
   )
   {
     if (JustCaughtDelimiter == TRUE &&
-        data[4] == MYFILTER_NALU_SPS &&
-        is_in_valid_interval())
+        data[4] == MYFILTER_NALU_SPS 
+        // is_in_valid_interval()
+        )
     {
-      g_print("SSP caught\n");
+      // g_print("SSP caught\n");
       rtn = read_from_server("127.0.0.1",
                              5000,
                              "one",
