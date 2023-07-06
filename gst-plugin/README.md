@@ -1,7 +1,7 @@
 ## Custom pass through plugin
 
 ```shell
-GST_PLUGIN_PATH=/Users/yango3/Documents/yangjun/project/raspberry/gstreamer/gst-template/build/gst-plugin/ gst-launch-1.0 --gst-debug-level=4 videotestsrc ! my_filter ! autovideosink
+ GST_PLUGIN_PATH=/home/ruff/project/gstreamer/gst-plugin-github/build/gst-plugin  gst-launch-1.0    rtspsrc location=rtsp://admin:nanchao.org@192.168.31.107:554/Streaming/Channels/101   !  rtph264depay ! h264parse ! video/x-h264,stream-format=byte-stream,alignment=nal !  seifilter host=127.0.0.1 port=5000 uri=one  !  queue !   identity  ! fakesink sync=true
 ```
 
 ## Some H.264 NAL data
