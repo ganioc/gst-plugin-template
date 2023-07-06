@@ -182,6 +182,18 @@ gst_seifilter_class_init(GstSeiFilterClass *klass)
       G_PARAM_READWRITE
     )
   );
+
+  g_object_class_install_property(gobject_class,
+    PROP_PORT,
+    g_param_spec_uint(
+      "port",
+      "port number",
+      "port number uint16",
+      1000,
+      99999,
+      3000,
+      G_PARAM_READWRITE));
+
  /*
   g_object_class_install_property(gobject_class,
     PROP_HOST_LEN,
@@ -194,16 +206,7 @@ gst_seifilter_class_init(GstSeiFilterClass *klass)
       0,
       G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
  
-  g_object_class_install_property(gobject_class,
-    PROP_PORT,
-    g_param_spec_uint(
-      "port",
-      "port number",
-      "port number uint16",
-      1000,
-      99999,
-      3000,
-      G_PARAM_READWRITE));
+
 
   g_object_class_install_property(gobject_class,
     PROP_URI,
