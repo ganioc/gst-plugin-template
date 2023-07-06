@@ -40,17 +40,17 @@ gio_dep = dependency('gio-2.0', fallback: ['glib', 'libgio_dep'])
 #)
 
 # # The myfilter Plugin
- gstmyfilter_sources = [
-  'src/gstmyfilter.c',
-  ]
+#  gstmyfilter_sources = [
+#   'src/gstmyfilter.c',
+#   ]
 
-gstmyfilter = library('gstmyfilter',
-  gstmyfilter_sources,
-  c_args: plugin_c_args,
-  dependencies : [gst_dep, gstbase_dep],
-  install : true,
-  install_dir : plugins_install_dir,
-)
+# gstmyfilter = library('gstmyfilter',
+#   gstmyfilter_sources,
+#   c_args: plugin_c_args,
+#   dependencies : [gst_dep, gstbase_dep],
+#   install : true,
+#   install_dir : plugins_install_dir,
+# )
 
 
  gstseifilter_sources = [

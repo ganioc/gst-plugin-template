@@ -23,4 +23,4 @@ def get_two():
   return "32:12:12:12:39"
 
 if __name__ == '__main__':
-    api.run()
+    api.run('0.0.0.0', 5000)

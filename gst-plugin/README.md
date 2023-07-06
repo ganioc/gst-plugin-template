@@ -3,6 +3,9 @@
 ### on RK3568
 visit http://192.168.0.99:5000/one
 
+Same plugin codes for PC and RK3568.
+
+
 
 ```shell
 $ GST_PLUGIN_PATH=/home/pi/sei/gst-plugin-github/build/gst-plugin  gst-launch-1.0   rtspsrc location=rtsp://admin:nanchao.org@192.168.31.107:554/Streaming/Channels/101   !  rtph264depay ! h264parse ! video/x-h264,stream-format=byte-stream,alignment=nal  ! seifilter host=192.168.0.99 port=5000 uri=one  !  queue  !  rtph264pay ! udpsink host=192.168.0.99 port=9988
