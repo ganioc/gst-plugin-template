@@ -149,6 +149,12 @@ gst_seifilter_finalize(GObject *object){
     g_free(filter->uri);
   }
 }
+
+static GstStateChangeReturn
+gst_seifilter_change_state(GstElement *element, GstStateChange transition){
+  return GST_ELEMENT_CLASS(parent_class)->change_state(element,transition);
+}
+
 /* initialize the plugin's class */
 static void
 gst_seifilter_class_init(GstSeiFilterClass *klass)
@@ -160,6 +166,8 @@ gst_seifilter_class_init(GstSeiFilterClass *klass)
 
   gobject_class = (GObjectClass *)klass;
   gstelement_class = (GstElementClass *)klass;
+
+  gstelement_class->change_state = gst_seifilter_change_state;
 
   gobject_class->set_property = gst_seifilter_set_property;
   gobject_class->get_property = gst_seifilter_get_property;
@@ -687,6 +695,7 @@ seifilter_init(GstPlugin *seifilter)
 #ifndef PACKAGE
 #define PACKAGE "seifilterplugin"
 #endif
+
 
 /* gstreamer looks for this structure to register plugins
  *
