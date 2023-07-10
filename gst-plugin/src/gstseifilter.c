@@ -697,6 +697,12 @@ gst_seifilter_chain(GstPad *pad, GstObject *parent, GstBuffer *buf)
   data = info.data;
   size = info.size;
 
+  if(size >=5){
+    g_print("%02x %02x %02x %02x %02x\n", data[0], data[1], data[2], data[3], data[4]);
+  }
+
+
+
   if (size >= 5 &&
       data[0] == 0x00 &&
       data[1] == 0x00 &&
@@ -706,7 +712,7 @@ gst_seifilter_chain(GstPad *pad, GstObject *parent, GstBuffer *buf)
       // is_in_valid_interval()
   )
   {
-    if (JustCaughtDelimiter == TRUE &&
+    if (JustCaughtDelimiter == FALSE &&
         data[4] == SEIFILTER_NALU_SPS 
         // is_in_valid_interval()
         )
@@ -770,19 +776,24 @@ gst_seifilter_chain(GstPad *pad, GstObject *parent, GstBuffer *buf)
 
         // Push the SEI message downstream
         gst_pad_push(filter->srcpad, sei_buf);
+        JustCaughtDelimiter = FALSE;
       }else{
         g_print("read server failed\n");
       }
+
+      
     }
-    else if (data[4] == SEIFILTER_NALU_DELIMIT)
-    {
-      JustCaughtDelimiter = TRUE;
-    }
-    else
-    {
-      JustCaughtDelimiter = FALSE;
-    }
+    // else if (data[4] == SEIFILTER_NALU_DELIMIT)
+    // else if(data[4] == SEIFILTER_NALU_SPS)
+    // {
+    //   JustCaughtDelimiter = TRUE;
+    // }
+    // else
+    // {
+    //   JustCaughtDelimiter = FALSE;
+    // }
   }
+  
 
   // if (filter->silent == FALSE)
   //   g_print ("I'm plugged, therefore I'm in.\n");
